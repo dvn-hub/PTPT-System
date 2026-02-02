@@ -101,6 +101,17 @@ class Config:
     # Database
     DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///patungan.db')
     
+    # WinterCode API (Stock Monitor)
+    WC_USERNAME = os.getenv('WC_USERNAME')
+    WC_PASSWORD = os.getenv('WC_PASSWORD')
+    LOGIN_URL = os.getenv('WC_LOGIN_URL', 'https://api.wintercode.site/login') # Sesuaikan URL jika berbeda
+    API_URL = os.getenv('WC_API_URL', 'https://api.wintercode.site/batch')     # Sesuaikan URL jika berbeda
+    
+    # Workers List (Hardcoded array as requested)
+    WORKERS = ["Worker1", "Worker2", "Worker3", "Worker4", "Worker5"]
+    
+    DASHBOARD_CHANNEL_ID = get_int_env('DASHBOARD_CHANNEL_ID')
+
     # Payment
     DEFAULT_BANK_ACCOUNT = "BCA: 4400-1-9922-7 (A/N: MUHAMMAD IISA IBROHIM)"
     QRIS_IMAGE_URL = "https://cdn.discordapp.com/attachments/1451798194928353437/1467542255614169192/QR_NEW.png?ex=6980c2bb&is=697f713b&hm=20a597349a9994925525343cab03cc549f24c07bf9283406ef9178fba358c404&"

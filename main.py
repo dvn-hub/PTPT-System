@@ -1,6 +1,6 @@
 # main.py
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 import asyncio
 import sys
 import traceback
@@ -14,6 +14,8 @@ from bot.views import MainTicketView, TicketPanelView, AdminDashboardView
 from utils.helpers import setup_logging
 import logging
 from database.crud import get_ticket_by_channel
+from api import WinterAPI, process_data
+import ui
 
 # Setup logging
 logger = setup_logging()
@@ -37,6 +39,7 @@ class PatunganBot(commands.Bot):
         self.ticket_handler = TicketHandler(self)
         self.payment_processor = PaymentProcessor(self)
         self.admin_handler = AdminHandler(self)
+        self.winter_api = WinterAPI()
         
     async def setup_hook(self):
         """Setup bot extensions and database"""
@@ -55,6 +58,9 @@ class PatunganBot(commands.Bot):
         
         # Sync commands
         await self.tree.sync()
+        
+        # Start Stock Monitor Task
+        self.stock_monitor_task.start()
         logger.info("Commands synced")
     
     async def on_ready(self):
@@ -90,6 +96,38 @@ class PatunganBot(commands.Bot):
         
         logger.info("🚀 Bot is fully initialized and waiting for interactions!")
     
+    @tasks.loop(minutes=5)
+    async def stock_monitor_task(self):
+        """Auto update stock dashboard every 5 minutes"""
+        if not self.config.DASHBOARD_CHANNEL_ID:
+            return
+
+        logger.info("🔄 Running Stock Monitor Task...")
+        try:
+            channel = self.get_channel(self.config.DASHBOARD_CHANNEL_ID)
+            if not channel:
+                return
+
+            raw_data = self.winter_api.fetch_data()
+            if raw_data:
+                processed = process_data(raw_data)
+                embed = ui.create_dashboard_embed(processed)
+                
+                # Cari pesan terakhir dari bot untuk di-edit (agar tidak spam)
+                last_msg = None
+                async for msg in channel.history(limit=10):
+                    if msg.author == self.user:
+                        last_msg = msg
+                        break
+                
+                if last_msg:
+                    await last_msg.edit(embed=embed)
+                else:
+                    await channel.send(embed=embed)
+                logger.info("✅ Dashboard updated successfully.")
+        except Exception as e:
+            logger.error(f"❌ Error in stock monitor task: {e}")
+
     async def on_message(self, message):
         """Handle messages"""
         # Ignore bot messages
@@ -106,6 +144,20 @@ class PatunganBot(commands.Bot):
             if message.attachments:
                 logger.info(f"📸 Processing payment proof in ticket: {message.channel.name}")
                 await self.payment_processor.process_payment_proof(message)
+        
+        # Manual Command: !cekstock
+        if message.content.lower() == '!cekstock':
+            status_msg = await message.channel.send("⏳ Fetching data from WinterCode...")
+            try:
+                raw_data = self.winter_api.fetch_data()
+                if raw_data:
+                    processed = process_data(raw_data)
+                    embed = ui.create_dashboard_embed(processed)
+                    await status_msg.edit(content=None, embed=embed)
+                else:
+                    await status_msg.edit(content="❌ Gagal mengambil data (API Error/Login Failed).")
+            except Exception as e:
+                await status_msg.edit(content=f"❌ Error: {e}")
         
         await self.process_commands(message)
     
