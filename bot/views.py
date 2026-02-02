@@ -283,14 +283,22 @@ class TicketPanelView(ui.View):
         seen = set()
         for p in patungans:
             if p.product_name not in seen:
+                # Filter full slots
+                if p.current_slots >= p.total_slots:
+                    continue
+                    
                 options.append(discord.SelectOption(
                     label=f"{p.product_name}",
                     value=p.product_name,
-                    description=f"Harga: Rp {p.price:,} | Slot: {p.total_slots}"
+                    description=f"Harga: Rp {p.price:,} | Slot: {p.current_slots}/{p.total_slots}"
                 ))
                 seen.add(p.product_name)
                 if len(options) >= 25:
                     break
+        
+        if not options:
+            await interaction.response.send_message("❌ Mohon maaf, semua slot patungan saat ini **PENUH**.", ephemeral=True)
+            return
         
         view = ProductSelectView(self.bot, options)
         await interaction.response.send_message("Silakan pilih produk terlebih dahulu:", view=view, ephemeral=True)

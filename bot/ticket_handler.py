@@ -3,7 +3,7 @@ from discord import ui
 from discord.ext import commands, tasks
 from config import Config, Emojis
 from database.crud import (
-    create_user_ticket, get_ticket_by_channel, update_ticket_status,
+    create_user_ticket, get_ticket_by_channel, update_ticket_status, get_patungan,
     get_user_active_ticket, create_system_log
 )
 from database.models import UserTicket, Patungan
@@ -455,6 +455,19 @@ class TicketHandler:
                 patungan_version=None  # All versions
             )
             
+            # Check cancellation rules (Slot 17 Rule)
+            for slot in slots:
+                if slot.slot_status in ['waiting_payment', 'paid']:
+                    patungan = await get_patungan(self.bot.session, slot.patungan_version)
+                    if patungan and patungan.current_slots >= 17:
+                        await interaction.response.send_message(
+                            f"{Emojis.WARNING} **GAGAL MEMBATALKAN**\n"
+                            f"Slot **{slot.patungan_version}** tidak bisa dibatalkan karena peserta sudah mencapai 17++.\n"
+                            f"Silakan hubungi Admin untuk bantuan.",
+                            ephemeral=True
+                        )
+                        return
+            
             # Update each slot status
             for slot in slots:
                 slot.slot_status = 'kicked'
@@ -831,6 +844,18 @@ class TicketHandler:
                     )
                     await interaction.response.send_message(embed=embed, ephemeral=True)
                     return
+            
+            # Check if patungan is full
+            patungan = await get_patungan(self.bot.session, product_name)
+            if patungan and patungan.current_slots >= patungan.total_slots:
+                embed = discord.Embed(
+                    title=f"{Emojis.BAN} **FULL BOOKED**",
+                    description=f"Mohon maaf, patungan **{product_name}** sudah penuh ({patungan.current_slots}/{patungan.total_slots}).\n"
+                                f"Silakan tunggu kloter berikutnya atau pilih produk lain.",
+                    color=self.config.COLOR_ERROR
+                )
+                await interaction.edit_original_response(content=None, embed=embed, view=None)
+                return
 
             # Format: (nama_produk)-displayname_user
             # Clean username to be channel-safe

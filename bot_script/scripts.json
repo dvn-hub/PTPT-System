@@ -23,5 +23,9 @@
 
   "WEBHOOK_FISHIT": "https://discord.com/api/webhooks/1422865888390021262/76qvUPwZ_nUQedBr_q42jm_7y9ddmU34ozVE2r0W4derVkPWMTJ47bvzZvxT1bZmCb_h",
 
-  "WEBHOOK_KAERU": "https://discord.com/api/webhooks/1462334004354224138/K-0liWniczeVm9uz_tQdAqss1Lw0CV9NKOJc0wbFbvBvG81wgLSIopsEM7bqwe0rxviL"
+  "WEBHOOK_KAERU": "https://discord.com/api/webhooks/1462334004354224138/K-0liWniczeVm9uz_tQdAqss1Lw0CV9NKOJc0wbFbvBvG81wgLSIopsEM7bqwe0rxviL",
+
+  "DVN_ACCEPT_GIFT": "loadstring(game:HttpGet(\"https://raw.githubusercontent.com/dvn-hub/DVN-Fish-It/refs/heads/main/Accept%20Gift\"))()",
+
+  "DVN_AUTO_GIFT": "loadstring(game:HttpGet(\"https://raw.githubusercontent.com/dvn-hub/DVN-Fish-It/refs/heads/main/Auto%20Gift\"))()"
 }

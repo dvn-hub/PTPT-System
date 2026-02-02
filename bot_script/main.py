@@ -196,6 +196,8 @@ class ScriptDropdown(discord.ui.Select):
             discord.SelectOption(label="DVN Logger", value="DVN_LOGGER", description="Logger Pro Feature", emoji="📝"),
             discord.SelectOption(label="DVN Log Caught AutoExe", value="DVN_AUTOEXE", description="Script Auto Execute", emoji="⚙️"),
             discord.SelectOption(label="DVN Log FM Auto Exe", value="DVN_LOG_FM", description="Auto Execute Log FM", emoji="⚙️"),
+            discord.SelectOption(label="DVN Accept Gift", value="DVN_ACCEPT_GIFT", description="Auto Accept Gift", emoji="🎁"),
+            discord.SelectOption(label="DVN Auto Gift", value="DVN_AUTO_GIFT", description="Auto Send Gift", emoji="🎁"),
             
             # --- WINTER SERIES ---
             discord.SelectOption(label="Winter Kaitun", value="WINTER_KAITUN", description="Winter Hub Kaitun", emoji="❄️"),
