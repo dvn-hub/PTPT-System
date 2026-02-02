@@ -1,0 +1,27 @@
+{
+  "DVN_FISHIT": "loadstring(game:HttpGet(\"https://raw.githubusercontent.com/dvn-hub/DVN-Fish-It/refs/heads/main/main.lua\"))()",
+
+  "DVN_LOGGER": "loadstring(game:HttpGet(\"https://raw.githubusercontent.com/dvn-hub/DVN-Fish-It/refs/heads/main/logger.lua\"))()",
+
+  "DVN_AUTOEXE": "loadstring(game:HttpGet(\"https://raw.githubusercontent.com/dvn-hub/DVN-Fish-It/main/log%20auto%20DVN.lua\"))()",
+
+  "DVN_LOG_FM": "loadstring(game:HttpGet(\"https://raw.githubusercontent.com/dvn-hub/DVN-Fish-It/refs/heads/main/log%20FM%20DVN.lua\"))()",
+
+  "ATOMIC": "script_key=\"NKQkgrRlCpitzSTWcAYqENsNPHVDAMng\";\nloadstring(game:HttpGet(\"https://raw.githubusercontent.com/bimoraa/Euphoria/refs/heads/main/loader.luau\"))()",
+
+  "SERAPHIN": "script_key=\"YwSQnsQEumPTuuNKwIZrdXuVRZTleznp\";\nloadstring(game:HttpGet(\"https://api.luarmor.net/files/v3/loaders/4dc9dcf99003ffd560ef9ba6ead36318.lua\"))()",
+
+  "LIME": "script_key=\"SkjpagNfEDABOmPXehbfWKCxUXyeOnix\";\nloadstring(game:HttpGet(\"https://api.luarmor.net/files/v3/loaders/a29b7b1e7f765f0fe84ad4b853c7bd3c.lua\"))()",
+
+  "CHLOE": "loadstring(game:HttpGet(\"https://raw.githubusercontent.com/MajestySkie/Chloe-X/main/Main/ChloeX\"))()",
+
+  "WINTER_KAITUN": "loadstring(game:HttpGet(\"https://raw.githubusercontent.com/dvn-hub/DVN-Fish-It/refs/heads/main/_G.FishItConfig%20%3D%20_G.lua\"))()\nscript_key=\"E5ECC296CE60E2EFA78D52F20596D297\";\nlocal s,r repeat s,r=pcall(function()return game:HttpGet(\"https://raw.githubusercontent.com/FnDXueyi/roblog/refs/heads/main/fishit-78c86024ea87c8eca577549807421962.lua\")end)wait(1)until s;loadstring(r)()",
+
+  "WINTER_DASH": "loadstring(game:HttpGet(\"https://raw.githubusercontent.com/FnDXueyi/list/refs/heads/main/game\"))()",
+
+  "WEBHOOK_DVN": "https://discord.com/api/webhooks/1455188929824161914/ianT2aawksflHN7vmM0_Ptal1PSVGq81O89Y03eP81Y-00obrY4sY6nDwqGxvQPuS8zh",
+
+  "WEBHOOK_FISHIT": "https://discord.com/api/webhooks/1422865888390021262/76qvUPwZ_nUQedBr_q42jm_7y9ddmU34ozVE2r0W4derVkPWMTJ47bvzZvxT1bZmCb_h",
+
+  "WEBHOOK_KAERU": "https://discord.com/api/webhooks/1462334004354224138/K-0liWniczeVm9uz_tQdAqss1Lw0CV9NKOJc0wbFbvBvG81wgLSIopsEM7bqwe0rxviL"
+}
