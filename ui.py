@@ -180,33 +180,77 @@ class StockPaymentAdminView(discord.ui.View):
         super().__init__(timeout=None)
         self.bot = bot
 
-    @discord.ui.button(label="✅ Approve & Send Link", style=discord.ButtonStyle.success)
+    @discord.ui.button(label="✅ Approve & Send Link", style=discord.ButtonStyle.success, custom_id="stock_approve_btn")
     async def approve(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # Cek permission (hanya admin/yang punya izin manage messages)
-        if not interaction.user.guild_permissions.manage_messages:
-             await interaction.response.send_message("❌ Hanya admin yang bisa melakukan approval.", ephemeral=True)
+        # Cek permission (Admin / Overlord / Warden)
+        user_roles = [r.id for r in interaction.user.roles]
+        allowed_roles = [config.Config.SERVER_OVERLORD_ROLE_ID, config.Config.SERVER_WARDEN_ROLE_ID] + config.Config.ADMIN_ROLE_IDS
+        
+        if not any(role_id in user_roles for role_id in allowed_roles):
+             await interaction.response.send_message("❌ Hanya Admin, Overlord, atau Warden yang bisa melakukan approval.", ephemeral=True)
              return
 
-        # Kirim Link Private Server
+        await interaction.response.defer()
+
+        # 1. Identifikasi Buyer & Proof
+        buyer = interaction.message.mentions[0] if interaction.message.mentions else None
+        proof_url = interaction.message.embeds[0].image.url if interaction.message.embeds and interaction.message.embeds[0].image else None
+        
+        # 2. Kirim Log ke Transaction History
+        history_channel = interaction.guild.get_channel(config.Config.TRANSACTION_HISTORY_CHANNEL_ID)
+        if history_channel and buyer:
+            # Extract item name from channel name (e.g. ticket-sc-high-username -> SC HIGH)
+            try:
+                parts = interaction.channel.name.split('-')
+                if len(parts) > 2:
+                    item_name = " ".join(parts[1:-1]).upper()
+                else:
+                    item_name = "STOCK ITEM"
+            except:
+                item_name = "STOCK ITEM"
+
+            hist_embed = discord.Embed(title=f"{config.Emojis.VERIFIED} **SUCCESSFUL TRANSACTION**", color=config.Config.COLOR_GOLD)
+            hist_embed.add_field(name=f"{config.Emojis.TICKET} **Item:**", value=item_name, inline=True)
+            hist_embed.add_field(name=f"{config.Emojis.DISCORD_CROWN} **Buyer:**", value=buyer.mention, inline=True)
+            hist_embed.add_field(name=f"{config.Emojis.MONEY_BAG} **Price:**", value="*See Proof*", inline=True)
+            hist_embed.add_field(name=f"{config.Emojis.NETHERITE_PICKAXE} **Handler:**", value=interaction.user.mention, inline=True)
+            
+            if proof_url:
+                hist_embed.set_image(url=proof_url)
+            hist_embed.set_footer(text="DVN Secure Transaction System")
+            
+            try:
+                await history_channel.send(embed=hist_embed)
+            except Exception as e:
+                print(f"Failed to send history log: {e}")
+
+        # 3. Kirim Link Private Server & Instruksi
         link = config.Config.PRIVATE_SERVER_LINK
         embed = discord.Embed(
             title="✅ Pembayaran Diterima",
-            description=f"Terima kasih! Pembayaran kamu telah diverifikasi.\n\n**Silahkan join private server:**\n{link}\n\nHappy Shopping!",
+            description=f"Terima kasih! Pembayaran kamu telah diverifikasi.\n\n"
+                        f"🔗 **PRIVATE SERVER LINK:**\n{link}\n\n"
+                        f"ℹ️ **INFO PENTING:**\n"
+                        f"Silahkan **ketik Username Roblox** kalian di sini agar bisa kami proses/accept join request.",
             color=0x00FF00
         )
         
         # Kirim pesan sukses + Tombol Close Ticket
-        await interaction.channel.send(content=f"{interaction.message.mentions[0].mention if interaction.message.mentions else ''}", embed=embed, view=StockPostApprovalView(self.bot))
+        await interaction.channel.send(content=f"{buyer.mention if buyer else ''}", embed=embed, view=StockPostApprovalView(self.bot))
         
         # Matikan tombol
         for child in self.children:
             child.disabled = True
-        await interaction.response.edit_message(view=self)
+        await interaction.edit_original_response(view=self)
 
-    @discord.ui.button(label="❌ Reject", style=discord.ButtonStyle.danger)
+    @discord.ui.button(label="❌ Reject", style=discord.ButtonStyle.danger, custom_id="stock_reject_btn")
     async def reject(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not interaction.user.guild_permissions.manage_messages:
-             await interaction.response.send_message("❌ Hanya admin yang bisa reject.", ephemeral=True)
+        # Cek permission (Admin / Overlord / Warden)
+        user_roles = [r.id for r in interaction.user.roles]
+        allowed_roles = [config.Config.SERVER_OVERLORD_ROLE_ID, config.Config.SERVER_WARDEN_ROLE_ID] + config.Config.ADMIN_ROLE_IDS
+        
+        if not any(role_id in user_roles for role_id in allowed_roles):
+             await interaction.response.send_message("❌ Hanya Admin, Overlord, atau Warden yang bisa reject.", ephemeral=True)
              return
 
         await interaction.channel.send("❌ **Pembayaran Ditolak.** Silakan cek kembali nominal atau bukti transfer.")
