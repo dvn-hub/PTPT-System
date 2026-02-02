@@ -111,6 +111,7 @@ class Config:
     WORKERS = ["Worker1", "Worker2", "Worker3", "Worker4", "Worker5"]
     
     DASHBOARD_CHANNEL_ID = get_int_env('DASHBOARD_CHANNEL_ID')
+    DASHBOARD_CHANNEL_NAME = "📦│stock-dvn-store"
     STOCK_CATEGORY_ID = get_int_env('STOCK_CATEGORY_ID')
     PRIVATE_SERVER_LINK = os.getenv('PRIVATE_SERVER_LINK', 'https://www.roblox.com/games/')
 

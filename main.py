@@ -99,15 +99,22 @@ class PatunganBot(commands.Bot):
     @tasks.loop(minutes=5)
     async def stock_monitor_task(self):
         """Auto update stock dashboard every 5 minutes"""
-        if not self.config.DASHBOARD_CHANNEL_ID:
-            logger.warning("⚠️ DASHBOARD_CHANNEL_ID belum di-set di .env atau config.py")
-            return
-
         logger.info("🔄 Running Stock Monitor Task...")
         try:
-            channel = self.get_channel(self.config.DASHBOARD_CHANNEL_ID)
+            channel = None
+            
+            # 1. Coba cari pakai ID (jika ada di .env)
+            if self.config.DASHBOARD_CHANNEL_ID:
+                channel = self.get_channel(self.config.DASHBOARD_CHANNEL_ID)
+            
+            # 2. Jika tidak ketemu, cari pakai NAMA (Fallback)
             if not channel:
-                logger.error(f"❌ Channel Dashboard (ID: {self.config.DASHBOARD_CHANNEL_ID}) tidak ditemukan. Pastikan bot sudah siap dan ID benar.")
+                for guild in self.guilds:
+                    channel = discord.utils.get(guild.text_channels, name=self.config.DASHBOARD_CHANNEL_NAME)
+                    if channel: break
+            
+            if not channel:
+                logger.error(f"❌ Channel Dashboard tidak ditemukan. (ID: {self.config.DASHBOARD_CHANNEL_ID} | Name: {self.config.DASHBOARD_CHANNEL_NAME})")
                 return
 
             raw_data = await asyncio.to_thread(self.winter_api.fetch_data)

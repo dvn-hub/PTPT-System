@@ -49,7 +49,8 @@ async def setup_bot():
             ("💰│payment-log", "Payment verification log"),
             ("📜│transaction-history", "Approved transaction history"),
             ("🔔│announcements", "System announcements"),
-            ("📊│admin-dashboard", "Admin control panel")
+            ("📊│admin-dashboard", "Admin control panel"),
+            ("📦│stock-dvn-store", "Live Stock Monitor")
         ]
         
         for channel_name, topic in channels_to_create:
