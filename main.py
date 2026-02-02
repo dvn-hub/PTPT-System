@@ -100,12 +100,14 @@ class PatunganBot(commands.Bot):
     async def stock_monitor_task(self):
         """Auto update stock dashboard every 5 minutes"""
         if not self.config.DASHBOARD_CHANNEL_ID:
+            logger.warning("⚠️ DASHBOARD_CHANNEL_ID belum di-set di .env atau config.py")
             return
 
         logger.info("🔄 Running Stock Monitor Task...")
         try:
             channel = self.get_channel(self.config.DASHBOARD_CHANNEL_ID)
             if not channel:
+                logger.error(f"❌ Channel Dashboard (ID: {self.config.DASHBOARD_CHANNEL_ID}) tidak ditemukan. Pastikan bot sudah siap dan ID benar.")
                 return
 
             raw_data = await asyncio.to_thread(self.winter_api.fetch_data)
@@ -127,6 +129,11 @@ class PatunganBot(commands.Bot):
                 logger.info("✅ Dashboard updated successfully.")
         except Exception as e:
             logger.error(f"❌ Error in stock monitor task: {e}")
+
+    @stock_monitor_task.before_loop
+    async def before_stock_monitor_task(self):
+        logger.info("⏳ Menunggu bot siap sebelum menjalankan Stock Monitor...")
+        await self.wait_until_ready()
 
     async def on_message(self, message):
         """Handle messages"""
