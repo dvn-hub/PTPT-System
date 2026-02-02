@@ -269,8 +269,8 @@ class TicketPanelView(ui.View):
     async def create_ticket(self, interaction: discord.Interaction, button: ui.Button):
         """Handle create ticket button"""
         # Fetch available products
-        from database.models import Patungan
-        from sqlalchemy import select
+        from database.models import Patungan, UserSlot
+        from sqlalchemy import select, func
         stmt = select(Patungan).where(Patungan.status == 'open')
         result = await self.bot.session.execute(stmt)
         patungans = result.scalars().all()
@@ -283,14 +283,22 @@ class TicketPanelView(ui.View):
         seen = set()
         for p in patungans:
             if p.product_name not in seen:
+                # Calculate current slots dynamically
+                stmt_count = select(func.count(UserSlot.id)).where(
+                    UserSlot.patungan_version == p.product_name,
+                    UserSlot.slot_status.in_(['booked', 'waiting_payment', 'paid'])
+                )
+                res_count = await self.bot.session.execute(stmt_count)
+                current_slots = res_count.scalar() or 0
+
                 # Filter full slots
-                if p.current_slots >= p.total_slots:
+                if current_slots >= p.total_slots:
                     continue
                     
                 options.append(discord.SelectOption(
                     label=f"{p.product_name}",
                     value=p.product_name,
-                    description=f"Harga: Rp {p.price:,} | Slot: {p.current_slots}/{p.total_slots}"
+                    description=f"Harga: Rp {p.price:,} | Slot: {current_slots}/{p.total_slots}"
                 ))
                 seen.add(p.product_name)
                 if len(options) >= 25:

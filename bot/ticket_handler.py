@@ -472,11 +472,6 @@ class TicketHandler:
             for slot in slots:
                 slot.slot_status = 'kicked'
                 
-                # Update patungan slot count
-                from database.crud import get_patungan
-                patungan = await get_patungan(self.bot.session, slot.patungan_version)
-                if patungan:
-                    patungan.current_slots = max(0, patungan.current_slots - 1)
             
             # Update ticket status
             ticket = await get_ticket_by_channel(self.bot.session, str(interaction.channel.id))
@@ -852,10 +847,21 @@ class TicketHandler:
             
             # Check if patungan is full
             patungan = await get_patungan(self.bot.session, product_name)
-            if patungan and patungan.current_slots >= patungan.total_slots:
+            
+            # Calculate current slots dynamically
+            from database.models import UserSlot
+            from sqlalchemy import select, func
+            stmt_count = select(func.count(UserSlot.id)).where(
+                UserSlot.patungan_version == product_name,
+                UserSlot.slot_status.in_(['booked', 'waiting_payment', 'paid'])
+            )
+            res_count = await self.bot.session.execute(stmt_count)
+            current_slots = res_count.scalar() or 0
+
+            if patungan and current_slots >= patungan.total_slots:
                 embed = discord.Embed(
                     title=f"{Emojis.BAN} **FULL BOOKED**",
-                    description=f"Mohon maaf, patungan **{product_name}** sudah penuh ({patungan.current_slots}/{patungan.total_slots}).\n"
+                    description=f"Mohon maaf, patungan **{product_name}** sudah penuh ({current_slots}/{patungan.total_slots}).\n"
                                 f"Silakan tunggu kloter berikutnya atau pilih produk lain.",
                     color=self.config.COLOR_ERROR
                 )
