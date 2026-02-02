@@ -51,23 +51,28 @@ class WinterAPI:
             
             try:
                 # print(f"   -> Request Batch {i//batch_size + 1}/{total_batches}...")
-                r = requests.post(Config.API_URL, json=payload, headers=headers, timeout=20)
+                r = requests.post(Config.API_URL, json=payload, headers=headers, timeout=10)
                 
                 # Handle 401 (Expired)
                 if r.status_code == 401:
                     print("⚠️ Token Expired. Login ulang...")
                     if self.login():
                         headers["Authorization"] = f"Bearer {self.token}"
-                        r = requests.post(Config.API_URL, json=payload, headers=headers, timeout=20)
+                        r = requests.post(Config.API_URL, json=payload, headers=headers, timeout=10)
 
                 if r.status_code == 200:
                     data = r.json().get('data', {})
                     all_player_data.update(data)
                 else:
                     print(f"❌ Batch Gagal: {r.status_code}")
+                    # Jika batch pertama gagal, kemungkinan besar config/API salah. Stop process.
+                    if i == 0:
+                        raise Exception(f"API Error Batch 1: {r.status_code} | {r.text[:50]}")
             
             except Exception as e:
                 print(f"❌ Error Koneksi Batch: {e}")
+                # Lempar error agar tertangkap di !debugstock / !forcestock
+                if i == 0: raise e
 
         if all_player_data:
             print("✅ Semua Batch Selesai!")
