@@ -135,7 +135,7 @@ class Config:
     
     # OCR Configuration
     ENABLE_OCR = True
-    TESSERACT_PATH = os.getenv('TESSERACT_PATH', '/usr/bin/tesseract')
+    TESSERACT_PATH = os.getenv('TESSERACT_PATH', r'C:\Program Files\Tesseract-OCR\tesseract.exe' if os.name == 'nt' else '/usr/bin/tesseract')
     
     # Timezone
     TIMEZONE = 'Asia/Jakarta'

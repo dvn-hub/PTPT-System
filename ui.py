@@ -216,6 +216,25 @@ class StockPaymentAdminView(discord.ui.View):
         await interaction.response.edit_message(view=self)
 
 async def handle_stock_payment(bot, message):
-    embed = discord.Embed(title="📸 Bukti Pembayaran Stock", description=f"User {message.author.mention} mengirim bukti pembayaran.\nAdmin, silakan cek dan konfirmasi.", color=0xFFFF00, timestamp=datetime.datetime.now())
+    description = f"User {message.author.mention} mengirim bukti pembayaran.\nAdmin, silakan cek dan konfirmasi."
+    
+    # OCR Processing (Auto Read Nominal)
+    if message.attachments and bot.config.ENABLE_OCR and hasattr(bot, 'payment_processor') and bot.payment_processor.ocr:
+        try:
+            # Feedback visual bahwa bot sedang membaca
+            temp_msg = await message.channel.send(f"{config.Emojis.LOADING_CIRCLE} **Menganalisis gambar...**")
+            
+            proof_url = message.attachments[0].url
+            detected_amount = await bot.payment_processor.ocr.extract_amount_from_image(proof_url)
+            
+            if detected_amount > 0:
+                description += f"\n\n🤖 **OCR Detected:** Rp {detected_amount:,}"
+            
+            await temp_msg.delete()
+        except Exception as e:
+            print(f"⚠️ OCR Error: {e}")
+            # Lanjut kirim embed meski OCR gagal
+
+    embed = discord.Embed(title="📸 Bukti Pembayaran Stock", description=description, color=0xFFFF00, timestamp=datetime.datetime.now())
     if message.attachments: embed.set_image(url=message.attachments[0].url)
     await message.channel.send(content=message.author.mention, embed=embed, view=StockPaymentAdminView(bot))
