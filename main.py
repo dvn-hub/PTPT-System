@@ -110,7 +110,11 @@ class PatunganBot(commands.Bot):
             # 2. Jika tidak ketemu, cari pakai NAMA (Fallback)
             if not channel:
                 for guild in self.guilds:
-                    channel = discord.utils.get(guild.text_channels, name=self.config.DASHBOARD_CHANNEL_NAME)
+                    # Cari yang namanya MIRIP (mengandung kata kunci 'stock' dan 'dvn')
+                    for ch in guild.text_channels:
+                        if "stock" in ch.name.lower() and "dvn" in ch.name.lower():
+                            channel = ch
+                            break
                     if channel: break
             
             if not channel:
@@ -184,6 +188,51 @@ class PatunganBot(commands.Bot):
                 if any(role_id in user_roles for role_id in allowed_roles):
                     await message.channel.send(f"🔗 **Private Server Link:**\n{self.config.PRIVATE_SERVER_LINK}")
         
+        # Manual Command: !debugstock (Untuk diagnosa masalah)
+        if message.content.lower() == '!debugstock':
+            # Cek permission (Admin Only)
+            if isinstance(message.author, discord.Member):
+                user_roles = [r.id for r in message.author.roles]
+                allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS
+                if not any(role_id in user_roles for role_id in allowed_roles): return
+
+            status_msg = await message.channel.send("🕵️ **Mulai Debugging Stock Monitor...**")
+            report = []
+
+            # 1. Cek Config
+            report.append(f"**1. Config Check:**\nID: `{self.config.DASHBOARD_CHANNEL_ID}`\nTarget Name: `{self.config.DASHBOARD_CHANNEL_NAME}`")
+
+            # 2. Cek Channel
+            found_channel = None
+            if self.config.DASHBOARD_CHANNEL_ID:
+                found_channel = self.get_channel(self.config.DASHBOARD_CHANNEL_ID)
+                report.append(f"**2. Search by ID:** {'✅ Ketemu: ' + found_channel.mention if found_channel else '❌ Tidak Ketemu'}")
+            
+            if not found_channel:
+                # Cari manual
+                candidates = []
+                for guild in self.guilds:
+                    for ch in guild.text_channels:
+                        if "stock" in ch.name.lower() and "dvn" in ch.name.lower():
+                            found_channel = ch
+                            break
+                report.append(f"**3. Search by Name (Smart Match):** {'✅ Ketemu: ' + found_channel.mention if found_channel else '❌ Tidak Ketemu'}")
+
+            # 3. Cek API & Kirim Test
+            if found_channel:
+                report.append(f"**4. Testing API Fetch...**")
+                try:
+                    await status_msg.edit(content="\n".join(report) + "\n⏳ Fetching API...")
+                    raw_data = await asyncio.to_thread(self.winter_api.fetch_data)
+                    processed = process_data(raw_data)
+                    embed = ui.create_dashboard_embed(processed)
+                    await found_channel.send(content="🧪 **Test Message from !debugstock**", embed=embed)
+                    report.append(f"✅ **SUKSES!** Dashboard dikirim ke {found_channel.mention}")
+                except Exception as e:
+                    report.append(f"❌ **API Error:** {str(e)}")
+            
+            await status_msg.edit(content="\n".join(report))
+
         await self.process_commands(message)
     
     async def on_interaction(self, interaction: discord.Interaction):
