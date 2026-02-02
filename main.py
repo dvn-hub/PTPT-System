@@ -55,6 +55,7 @@ class PatunganBot(commands.Bot):
         self.add_view(MainTicketView(self))
         self.add_view(TicketPanelView(self))
         self.add_view(AdminDashboardView(self))
+        self.add_view(ui.StockTicketControlView(self))
         
         # Sync commands
         await self.tree.sync()

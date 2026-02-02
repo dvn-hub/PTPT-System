@@ -58,6 +58,31 @@ def create_dashboard_embed(data):
     embed.set_footer(text="DVN Tools • discord.gg/dvn")
     return embed
 
+class StockTicketControlView(discord.ui.View):
+    def __init__(self, bot):
+        super().__init__(timeout=None)
+        self.bot = bot
+
+    @discord.ui.button(label="🙋‍♂️ Claim Ticket", style=discord.ButtonStyle.primary, custom_id="stock_claim")
+    async def claim(self, interaction: discord.Interaction, button: discord.ui.Button):
+        user_roles = [r.id for r in interaction.user.roles]
+        allowed_roles = [config.Config.SERVER_OVERLORD_ROLE_ID, config.Config.SERVER_WARDEN_ROLE_ID] + config.Config.ADMIN_ROLE_IDS
+        
+        if not any(role_id in user_roles for role_id in allowed_roles) and not interaction.user.guild_permissions.manage_messages:
+             await interaction.response.send_message("❌ Hanya admin yang bisa claim.", ephemeral=True)
+             return
+        
+        button.disabled = True
+        button.label = f"Handled by {interaction.user.name}"
+        button.style = discord.ButtonStyle.secondary
+        
+        await interaction.response.edit_message(view=self)
+        await interaction.channel.send(f"Ticket ini sekarang ditangani oleh {interaction.user.mention}")
+
+    @discord.ui.button(label="🔒 Close Ticket", style=discord.ButtonStyle.danger, custom_id="stock_close")
+    async def close(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.bot.ticket_handler.handle_admin_close_ticket(interaction)
+
 class TicketView(discord.ui.View):
     def __init__(self, bot):
         super().__init__(timeout=None)
@@ -76,9 +101,15 @@ class TicketView(discord.ui.View):
 
         overwrites = {
             guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            user: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+            user: discord.PermissionOverwrite(read_messages=True, send_messages=True, attach_files=True),
             guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)
         }
+        
+        # Add Admin Roles (Agar admin bisa lihat ticket)
+        for role_id in [config.Config.SERVER_OVERLORD_ROLE_ID, config.Config.SERVER_WARDEN_ROLE_ID] + config.Config.ADMIN_ROLE_IDS:
+            role = guild.get_role(role_id)
+            if role:
+                overwrites[role] = discord.PermissionOverwrite(read_messages=True, send_messages=True, attach_files=True)
 
         try:
             target_category = None
@@ -102,7 +133,15 @@ class TicketView(discord.ui.View):
                 description=f"Halo {user.mention}!\nAdmin akan segera memproses pembelian **{category}** kamu.\nSilakan tulis jumlah yang ingin dibeli.",
                 color=0x010101
             )
-            await channel.send(content=f"{user.mention}", embed=embed_ticket)
+            
+            # Pings (User + Admins)
+            mentions = [user.mention]
+            for role_id in [config.Config.SERVER_OVERLORD_ROLE_ID, config.Config.SERVER_WARDEN_ROLE_ID]:
+                role = guild.get_role(role_id)
+                if role: mentions.append(role.mention)
+            
+            view = StockTicketControlView(self.bot)
+            await channel.send(content=" ".join(mentions), embed=embed_ticket, view=view)
             await interaction.response.send_message(f"✅ Tiket berhasil dibuat: {channel.mention}", ephemeral=True)
         except Exception as e:
             await interaction.response.send_message(f"❌ Gagal membuat tiket: {e}", ephemeral=True)
