@@ -314,21 +314,6 @@ class PatunganManager:
         progress_percent = int((current_slots / patungan.total_slots) * 100)
         progress_bar = self._create_progress_bar(progress_percent)
         
-        # Create embed
-        embed = discord.Embed(
-            title=f"{Emojis.FIRE_BLUE} **LIVE SLOT STATUS**",
-            description=f"**{patungan.product_name}**",
-            color=color
-        )
-        
-        price_display = f"Rp {patungan.price:,}" if patungan.price > 0 else "GRATIS"
-        embed.add_field(name=f"{Emojis.PRICE_TAG_USD} Harga", value=price_display, inline=True)
-        embed.add_field(name=f"{Emojis.ICON_LUCKY} Slot", value=f"{current_slots}/{patungan.total_slots}", inline=True)
-        
-        embed.add_field(name=f"{Emojis.TYPING} Progress", value=f"{progress_bar} {progress_percent}%", inline=False)
-        embed.add_field(name=f"{Emojis.RING_BELL} Status", value=f"{status_emoji} {patungan.status.upper()}", inline=True)
-        
-        # Add Participants List
         # Fetch slots
         from sqlalchemy.orm import selectinload
         stmt_slots = select(UserSlot).where(
@@ -337,11 +322,11 @@ class PatunganManager:
         result_slots = await self.bot.session.execute(stmt_slots)
         slots = result_slots.scalars().all()
 
+        participants_text = ""
         if slots:
             # Sort slots by slot_number
             sorted_slots = sorted(slots, key=lambda x: x.slot_number)
             
-            participants_text = ""
             for slot in sorted_slots:
                 # Status Emoji
                 status_map = {
@@ -365,12 +350,24 @@ class PatunganManager:
                 # Format: No. UsernameRoblox - || @DisplaynameDiscord || (STATUS) [EMOJI]
                 participants_text += f"`{slot.slot_number}.` {slot.game_username} - || {discord_tag} || ({status_text}) {emoji}\n"
             
-            if len(participants_text) > 1024:
-                participants_text = participants_text[:1021] + "..."
-            
-            embed.add_field(name="👥 VIP Members", value=participants_text, inline=False)
+            if len(participants_text) > 4096:
+                participants_text = participants_text[:4093] + "..."
         else:
-            embed.add_field(name="👥 VIP Members", value="Belum ada member", inline=False)
+            participants_text = "Belum ada member"
+        
+        # Create embed
+        embed = discord.Embed(
+            title=f"{Emojis.FIRE_BLUE} **LIVE SLOT STATUS - {patungan.product_name}**",
+            description=participants_text,
+            color=color
+        )
+        
+        price_display = f"Rp {patungan.price:,}" if patungan.price > 0 else "GRATIS"
+        embed.add_field(name=f"{Emojis.PRICE_TAG_USD} Harga", value=price_display, inline=True)
+        embed.add_field(name=f"{Emojis.ICON_LUCKY} Slot", value=f"{current_slots}/{patungan.total_slots}", inline=True)
+        
+        embed.add_field(name=f"{Emojis.TYPING} Progress", value=f"{progress_bar} {progress_percent}%", inline=True)
+        embed.add_field(name=f"{Emojis.RING_BELL} Status", value=f"{status_emoji} {patungan.status.upper()}", inline=True)
         
         embed.set_footer(text=f"ID: {patungan.id} | Updated: {datetime.now().strftime('%H:%M')}")
         
