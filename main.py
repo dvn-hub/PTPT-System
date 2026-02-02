@@ -145,6 +145,11 @@ class PatunganBot(commands.Bot):
                 logger.info(f"📸 Processing payment proof in ticket: {message.channel.name}")
                 await self.payment_processor.process_payment_proof(message)
         
+        # Check for Stock Ticket (Category Check)
+        elif self.config.STOCK_CATEGORY_ID and message.channel.category and message.channel.category.id == self.config.STOCK_CATEGORY_ID:
+            if message.attachments:
+                await ui.handle_stock_payment(message)
+        
         # Manual Command: !cekstock
         if message.content.lower() == '!cekstock':
             status_msg = await message.channel.send("⏳ Fetching data from WinterCode...")
@@ -158,6 +163,26 @@ class PatunganBot(commands.Bot):
                     await status_msg.edit(content="❌ Gagal mengambil data (API Error/Login Failed).")
             except Exception as e:
                 await status_msg.edit(content=f"❌ Error: {e}")
+        
+        # Manual Command: !qr (QRIS Image - Admin Only)
+        if message.content.lower() == '!qr':
+            if isinstance(message.author, discord.Member):
+                user_roles = [r.id for r in message.author.roles]
+                allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID]
+                
+                if any(role_id in user_roles for role_id in allowed_roles):
+                    embed = discord.Embed(title="💳 QRIS Payment", color=self.config.COLOR_INFO)
+                    embed.set_image(url=self.config.QRIS_IMAGE_URL)
+                    await message.channel.send(embed=embed)
+
+        # Manual Command: !ps (Private Server Link - Admin Only)
+        if message.content.lower() == '!ps':
+            if isinstance(message.author, discord.Member):
+                user_roles = [r.id for r in message.author.roles]
+                allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID]
+                
+                if any(role_id in user_roles for role_id in allowed_roles):
+                    await message.channel.send(f"🔗 **Private Server Link:**\n{self.config.PRIVATE_SERVER_LINK}")
         
         await self.process_commands(message)
     

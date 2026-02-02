@@ -111,6 +111,8 @@ class Config:
     WORKERS = ["Worker1", "Worker2", "Worker3", "Worker4", "Worker5"]
     
     DASHBOARD_CHANNEL_ID = get_int_env('DASHBOARD_CHANNEL_ID')
+    STOCK_CATEGORY_ID = get_int_env('STOCK_CATEGORY_ID')
+    PRIVATE_SERVER_LINK = os.getenv('PRIVATE_SERVER_LINK', 'https://www.roblox.com/games/')
 
     # Payment
     DEFAULT_BANK_ACCOUNT = "BCA: 4400-1-9922-7 (A/N: MUHAMMAD IISA IBROHIM)"

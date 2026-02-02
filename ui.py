@@ -79,7 +79,13 @@ class TicketView(discord.ui.View):
         }
 
         try:
-            channel = await guild.create_text_channel(name=channel_name, overwrites=overwrites)
+            target_category = None
+            if config.Config.STOCK_CATEGORY_ID:
+                target_category = guild.get_channel(config.Config.STOCK_CATEGORY_ID)
+                if not target_category:
+                    print(f"⚠️ Warning: Kategori Stock (ID: {config.Config.STOCK_CATEGORY_ID}) tidak ditemukan. Membuat channel di luar kategori.")
+
+            channel = await guild.create_text_channel(name=channel_name, overwrites=overwrites, category=target_category)
             embed_ticket = discord.Embed(
                 title=f"Ticket Pembelian: {category}",
                 description=f"Halo {user.mention}!\nAdmin akan segera memproses pembelian **{category}** kamu.\nSilakan tulis jumlah yang ingin dibeli.",
@@ -109,3 +115,45 @@ class TicketView(discord.ui.View):
     @discord.ui.button(label="Buy COIN", style=discord.ButtonStyle.primary, custom_id="btn_coin")
     async def buy_coin(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.create_ticket(interaction, "COIN")
+
+class StockPaymentAdminView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="✅ Approve & Send Link", style=discord.ButtonStyle.success)
+    async def approve(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Cek permission (hanya admin/yang punya izin manage messages)
+        if not interaction.user.guild_permissions.manage_messages:
+             await interaction.response.send_message("❌ Hanya admin yang bisa melakukan approval.", ephemeral=True)
+             return
+
+        # Kirim Link Private Server
+        link = config.Config.PRIVATE_SERVER_LINK
+        embed = discord.Embed(
+            title="✅ Pembayaran Diterima",
+            description=f"Terima kasih! Pembayaran kamu telah diverifikasi.\n\n**Silahkan join private server:**\n{link}\n\nHappy Shopping!",
+            color=0x00FF00
+        )
+        await interaction.channel.send(content=f"{interaction.message.mentions[0].mention if interaction.message.mentions else ''}", embed=embed)
+        
+        # Matikan tombol
+        for child in self.children:
+            child.disabled = True
+        await interaction.response.edit_message(view=self)
+
+    @discord.ui.button(label="❌ Reject", style=discord.ButtonStyle.danger)
+    async def reject(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not interaction.user.guild_permissions.manage_messages:
+             await interaction.response.send_message("❌ Hanya admin yang bisa reject.", ephemeral=True)
+             return
+
+        await interaction.channel.send("❌ **Pembayaran Ditolak.** Silakan cek kembali nominal atau bukti transfer.")
+        
+        for child in self.children:
+            child.disabled = True
+        await interaction.response.edit_message(view=self)
+
+async def handle_stock_payment(message):
+    embed = discord.Embed(title="📸 Bukti Pembayaran Stock", description=f"User {message.author.mention} mengirim bukti pembayaran.\nAdmin, silakan cek dan konfirmasi.", color=0xFFFF00, timestamp=datetime.datetime.now())
+    if message.attachments: embed.set_image(url=message.attachments[0].url)
+    await message.channel.send(content=message.author.mention, embed=embed, view=StockPaymentAdminView())
