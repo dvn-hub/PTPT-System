@@ -43,6 +43,7 @@ class WinterAPI:
         total_batches = (len(workers) + batch_size - 1) // batch_size
         
         print(f"⏳ Memproses {len(workers)} akun (Total {total_batches} Batch)...")
+        print(f"   📝 List: {', '.join(workers[:5])}{'...' if len(workers) > 5 else ''}")
 
         for i in range(0, len(workers), batch_size):
             batch_nicknames = workers[i : i + batch_size]

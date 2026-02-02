@@ -1,6 +1,7 @@
 import discord
 import datetime
 import config
+from database.crud import create_user_ticket
 
 def fmt_money(n):
     if n >= 1e9: return f"{n/1e9:.2f}B"
@@ -58,8 +59,9 @@ def create_dashboard_embed(data):
     return embed
 
 class TicketView(discord.ui.View):
-    def __init__(self):
+    def __init__(self, bot):
         super().__init__(timeout=None)
+        self.bot = bot
 
     async def create_ticket(self, interaction: discord.Interaction, category: str):
         guild = interaction.guild
@@ -86,6 +88,15 @@ class TicketView(discord.ui.View):
                     print(f"⚠️ Warning: Kategori Stock (ID: {config.Config.STOCK_CATEGORY_ID}) tidak ditemukan. Membuat channel di luar kategori.")
 
             channel = await guild.create_text_channel(name=channel_name, overwrites=overwrites, category=target_category)
+            
+            # REGISTER TICKET TO DATABASE (Agar bisa rating saat close)
+            await create_user_ticket(
+                session=self.bot.session,
+                discord_user_id=str(user.id),
+                discord_username=user.name,
+                ticket_channel_id=str(channel.id)
+            )
+
             embed_ticket = discord.Embed(
                 title=f"Ticket Pembelian: {category}",
                 description=f"Halo {user.mention}!\nAdmin akan segera memproses pembelian **{category}** kamu.\nSilakan tulis jumlah yang ingin dibeli.",
@@ -116,9 +127,19 @@ class TicketView(discord.ui.View):
     async def buy_coin(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.create_ticket(interaction, "COIN")
 
-class StockPaymentAdminView(discord.ui.View):
-    def __init__(self):
+class StockPostApprovalView(discord.ui.View):
+    def __init__(self, bot):
         super().__init__(timeout=None)
+        self.bot = bot
+
+    @discord.ui.button(label="🔒 Close Ticket & End Session", style=discord.ButtonStyle.danger, emoji="🔒")
+    async def close_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.bot.ticket_handler.handle_admin_close_ticket(interaction)
+
+class StockPaymentAdminView(discord.ui.View):
+    def __init__(self, bot):
+        super().__init__(timeout=None)
+        self.bot = bot
 
     @discord.ui.button(label="✅ Approve & Send Link", style=discord.ButtonStyle.success)
     async def approve(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -134,7 +155,9 @@ class StockPaymentAdminView(discord.ui.View):
             description=f"Terima kasih! Pembayaran kamu telah diverifikasi.\n\n**Silahkan join private server:**\n{link}\n\nHappy Shopping!",
             color=0x00FF00
         )
-        await interaction.channel.send(content=f"{interaction.message.mentions[0].mention if interaction.message.mentions else ''}", embed=embed)
+        
+        # Kirim pesan sukses + Tombol Close Ticket
+        await interaction.channel.send(content=f"{interaction.message.mentions[0].mention if interaction.message.mentions else ''}", embed=embed, view=StockPostApprovalView(self.bot))
         
         # Matikan tombol
         for child in self.children:
@@ -153,7 +176,7 @@ class StockPaymentAdminView(discord.ui.View):
             child.disabled = True
         await interaction.response.edit_message(view=self)
 
-async def handle_stock_payment(message):
+async def handle_stock_payment(bot, message):
     embed = discord.Embed(title="📸 Bukti Pembayaran Stock", description=f"User {message.author.mention} mengirim bukti pembayaran.\nAdmin, silakan cek dan konfirmasi.", color=0xFFFF00, timestamp=datetime.datetime.now())
     if message.attachments: embed.set_image(url=message.attachments[0].url)
-    await message.channel.send(content=message.author.mention, embed=embed, view=StockPaymentAdminView())
+    await message.channel.send(content=message.author.mention, embed=embed, view=StockPaymentAdminView(bot))

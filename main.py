@@ -125,6 +125,7 @@ class PatunganBot(commands.Bot):
             if raw_data:
                 processed = process_data(raw_data)
                 embed = ui.create_dashboard_embed(processed)
+                view = ui.TicketView(self) # Attach View agar tombol Buy muncul
                 
                 # Cari pesan terakhir dari bot untuk di-edit (agar tidak spam)
                 last_msg = None
@@ -134,9 +135,9 @@ class PatunganBot(commands.Bot):
                         break
                 
                 if last_msg:
-                    await last_msg.edit(embed=embed)
+                    await last_msg.edit(embed=embed, view=view)
                 else:
-                    await channel.send(embed=embed)
+                    await channel.send(embed=embed, view=view)
                 logger.info("✅ Dashboard updated successfully.")
         except Exception as e:
             logger.error(f"❌ Error in stock monitor task: {e}")
@@ -166,7 +167,7 @@ class PatunganBot(commands.Bot):
         # Check for Stock Ticket (Category Check)
         elif self.config.STOCK_CATEGORY_ID and message.channel.category and message.channel.category.id == self.config.STOCK_CATEGORY_ID:
             if message.attachments:
-                await ui.handle_stock_payment(message)
+                await ui.handle_stock_payment(self, message)
         
         # Manual Command: !qr (QRIS Image - Admin Only)
         if message.content.lower() == '!qr':
@@ -226,12 +227,38 @@ class PatunganBot(commands.Bot):
                     raw_data = await asyncio.to_thread(self.winter_api.fetch_data)
                     processed = process_data(raw_data)
                     embed = ui.create_dashboard_embed(processed)
-                    await found_channel.send(content="🧪 **Test Message from !debugstock**", embed=embed)
+                    view = ui.TicketView(self)
+                    await found_channel.send(content="🧪 **Test Message from !debugstock**", embed=embed, view=view)
                     report.append(f"✅ **SUKSES!** Dashboard dikirim ke {found_channel.mention}")
                 except Exception as e:
                     report.append(f"❌ **API Error:** {str(e)}")
             
             await status_msg.edit(content="\n".join(report))
+
+        # Manual Command: !setworkers (Update list workers dynamic)
+        if message.content.lower().startswith('!setworkers'):
+            # Check permission
+            if isinstance(message.author, discord.Member):
+                user_roles = [r.id for r in message.author.roles]
+                allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS
+                if not any(role_id in user_roles for role_id in allowed_roles): return
+
+            args = message.content[12:].strip()
+            if not args:
+                current_workers = ", ".join(self.config.WORKERS)
+                await message.channel.send(f"⚠️ **List Workers Saat Ini:**\n`{current_workers}`\n\n**Cara Ganti:**\n`!setworkers user1, user2, user3`")
+                return
+            
+            new_workers = [w.strip() for w in args.split(',') if w.strip()]
+            if not new_workers:
+                await message.channel.send("❌ List tidak boleh kosong.")
+                return
+            
+            # Update Config Class (Static) agar terbaca di api.py
+            Config.WORKERS = new_workers
+            self.config.WORKERS = new_workers
+            
+            await message.channel.send(f"✅ **Berhasil Update Workers ({len(new_workers)} akun):**\n`{', '.join(new_workers)}`\n\n*Note: Update ini hanya sementara sampai bot restart. Tambahkan `WC_WORKERS` di .env agar permanen.*")
 
         await self.process_commands(message)
     

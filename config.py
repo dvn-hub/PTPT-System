@@ -105,10 +105,22 @@ class Config:
     WC_USERNAME = os.getenv('WC_USERNAME')
     WC_PASSWORD = os.getenv('WC_PASSWORD')
     LOGIN_URL = os.getenv('WC_LOGIN_URL', 'https://apiweb.wintercode.dev/api/auth/login') # Updated URL
-    API_URL = os.getenv('WC_API_URL', 'https://apiweb.wintercode.dev/api/player/batch')     # Updated URL
+    API_URL = os.getenv('WC_API_URL', 'https://apiweb.wintercode.dev/api/player-data/batch')     # Updated URL
     
-    # Workers List (Hardcoded array as requested)
-    WORKERS = ["Worker1", "Worker2", "Worker3", "Worker4", "Worker5"]
+    # Workers List
+    WORKERS = [
+        # --- GENERATE OTOMATIS PEKERJA ---
+        *[f"pekerjadvn{i}" for i in range(1, 36)],   "pekerjadvn306",
+        *[f"pekerjadvn{i}" for i in range(37, 62)],  "pekerjadvn602",
+        *[f"pekerjadvn{i}" for i in range(63, 69)],  "pekerjadvn609",
+        *[f"pekerjadvn{i}" for i in range(70, 88)],  "pekerjadvn808",
+        *[f"pekerjadvn{i}" for i in range(89, 91)],
+        
+        # --- AKUN LAINNYA ---
+        "gajahduduxx", "cend0l_2nd", "cend0l_3", "gajahnjungkel",
+        *[f"cend0l_{i:02d}" for i in range(5, 11)], # cend0l_05 s/d 10
+        "ur_baeee8", "cend0lseger", "dvn_store", "dvn_store1"
+    ]
     
     DASHBOARD_CHANNEL_ID = get_int_env('DASHBOARD_CHANNEL_ID')
     DASHBOARD_CHANNEL_NAME = "📦│stock-dvn-store"
