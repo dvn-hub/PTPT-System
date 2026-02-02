@@ -819,13 +819,18 @@ class TicketHandler:
             user = interaction.user
             guild = interaction.guild
             
-            # 1. CEK DUPLICATE TICKET (Anti-Spam Spesifik Kategori)
-            TICKET_CATEGORY_NAME = "『 𝙏𝙄𝘾𝙆𝙀𝙏 𝙋𝙏𝙋𝙏 』"
-            category = discord.utils.get(guild.categories, name=TICKET_CATEGORY_NAME)
+            # 1. CEK DUPLICATE TICKET
+            # Prioritas: ID -> Nama -> Buat Baru
+            category = discord.utils.get(guild.categories, id=self.config.TICKET_CATEGORY_ID)
             
-            # Fallback ke ID config jika nama tidak ketemu (Safety)
             if not category:
-                category = discord.utils.get(guild.categories, id=self.config.TICKET_CATEGORY_ID)
+                category = discord.utils.get(guild.categories, name="『 𝙏𝙄𝘾𝙆𝙀𝙏 𝙋𝙏𝙋𝙏 』")
+            
+            if not category:
+                try:
+                    category = await guild.create_category("『 𝙏𝙄𝘾𝙆𝙀𝙏 𝙋𝙏𝙋𝙏 』")
+                except Exception as e:
+                    logger.warning(f"Failed to create category: {e}")
             
             existing_channel = None
             

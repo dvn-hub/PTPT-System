@@ -139,7 +139,7 @@ class ProductSelectView(ui.View):
     
     async def callback(self, interaction: discord.Interaction):
         version = interaction.data['values'][0]
-        await interaction.response.defer()
+        await interaction.response.defer(ephemeral=True)
         await self.bot.ticket_handler.create_ticket_with_product(interaction, version)
 
 class AdminDashboardView(ui.View):
