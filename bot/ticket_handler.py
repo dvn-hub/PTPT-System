@@ -845,7 +845,7 @@ class TicketHandler:
 
             overwrites = {
                 guild.default_role: discord.PermissionOverwrite(read_messages=False),
-                user: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+                user: discord.PermissionOverwrite(read_messages=True, send_messages=True, attach_files=True),
                 guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True, manage_channels=True)
             }
             
