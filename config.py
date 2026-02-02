@@ -104,8 +104,8 @@ class Config:
     # WinterCode API (Stock Monitor)
     WC_USERNAME = os.getenv('WC_USERNAME')
     WC_PASSWORD = os.getenv('WC_PASSWORD')
-    LOGIN_URL = os.getenv('WC_LOGIN_URL', 'https://api.wintercode.site/login') # Sesuaikan URL jika berbeda
-    API_URL = os.getenv('WC_API_URL', 'https://api.wintercode.site/batch')     # Sesuaikan URL jika berbeda
+    LOGIN_URL = os.getenv('WC_LOGIN_URL', 'https://apiweb.wintercode.dev/api/auth/login') # Updated URL
+    API_URL = os.getenv('WC_API_URL', 'https://apiweb.wintercode.dev/api/player/batch')     # Updated URL
     
     # Workers List (Hardcoded array as requested)
     WORKERS = ["Worker1", "Worker2", "Worker3", "Worker4", "Worker5"]

@@ -18,6 +18,9 @@ class WinterAPI:
                     return True
             
             raise Exception(f"Login Gagal: {r.status_code} | {r.text}")
+        except requests.exceptions.ConnectionError:
+            # Handle jika domain tidak ditemukan atau server mati
+            raise Exception(f"Gagal koneksi ke API. Pastikan URL di .env benar. (Target: {Config.LOGIN_URL})")
         except Exception as e:
             print(f"❌ Error Login: {e}")
             raise e
