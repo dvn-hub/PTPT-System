@@ -170,10 +170,18 @@ class PatunganBot(commands.Bot):
             await self.ticket_handler.handle_ticket_message(message)
             
             if message.attachments:
-                logger.info(f"📸 Processing payment proof in ticket: {message.channel.name}")
-                await self.payment_processor.process_payment_proof(message)
+                # Cek apakah ini Ticket Stock (Berdasarkan Kategori)
+                is_stock_ticket = False
+                if self.config.STOCK_CATEGORY_ID and message.channel.category and message.channel.category.id == self.config.STOCK_CATEGORY_ID:
+                    is_stock_ticket = True
+                
+                if is_stock_ticket:
+                    await ui.handle_stock_payment(self, message)
+                else:
+                    logger.info(f"📸 Processing payment proof in ticket: {message.channel.name}")
+                    await self.payment_processor.process_payment_proof(message)
         
-        # Check for Stock Ticket (Category Check)
+        # Check for Stock Ticket (Category Check) - Fallback
         elif self.config.STOCK_CATEGORY_ID and message.channel.category and message.channel.category.id == self.config.STOCK_CATEGORY_ID:
             if message.attachments:
                 await ui.handle_stock_payment(self, message)
