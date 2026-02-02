@@ -16,16 +16,16 @@ class WinterAPI:
                 if self.token:
                     print("✅ Login Berhasil! Token diperbarui.")
                     return True
-            print(f"❌ Login Gagal: {r.status_code} | {r.text}")
-            return False
+            
+            raise Exception(f"Login Gagal: {r.status_code} | {r.text}")
         except Exception as e:
             print(f"❌ Error Login: {e}")
-            return False
+            raise e
 
     def fetch_data(self):
         # Auto Login jika belum punya token
         if not self.token:
-            if not self.login(): return None
+            self.login() # Akan raise Exception jika gagal
 
         headers = {
             "Authorization": f"Bearer {self.token}",
@@ -69,7 +69,7 @@ class WinterAPI:
             print("✅ Semua Batch Selesai!")
             return {"success": True, "data": all_player_data}
         
-        return None
+        raise Exception("Data kosong. Cek list WORKERS di config.py atau status API.")
 
 def get_ansi_color(variant_id):
     v = str(variant_id).lower() if variant_id else ""

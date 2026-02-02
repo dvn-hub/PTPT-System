@@ -108,7 +108,7 @@ class PatunganBot(commands.Bot):
             if not channel:
                 return
 
-            raw_data = self.winter_api.fetch_data()
+            raw_data = await asyncio.to_thread(self.winter_api.fetch_data)
             if raw_data:
                 processed = process_data(raw_data)
                 embed = ui.create_dashboard_embed(processed)
@@ -149,20 +149,6 @@ class PatunganBot(commands.Bot):
         elif self.config.STOCK_CATEGORY_ID and message.channel.category and message.channel.category.id == self.config.STOCK_CATEGORY_ID:
             if message.attachments:
                 await ui.handle_stock_payment(message)
-        
-        # Manual Command: !cekstock
-        if message.content.lower() == '!cekstock':
-            status_msg = await message.channel.send("⏳ Fetching data from WinterCode...")
-            try:
-                raw_data = self.winter_api.fetch_data()
-                if raw_data:
-                    processed = process_data(raw_data)
-                    embed = ui.create_dashboard_embed(processed)
-                    await status_msg.edit(content=None, embed=embed)
-                else:
-                    await status_msg.edit(content="❌ Gagal mengambil data (API Error/Login Failed).")
-            except Exception as e:
-                await status_msg.edit(content=f"❌ Error: {e}")
         
         # Manual Command: !qr (QRIS Image - Admin Only)
         if message.content.lower() == '!qr':
