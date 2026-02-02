@@ -842,7 +842,7 @@ class TicketHandler:
                         description=f"⚠️ Kamu masih punya tiket aktif di {existing_channel.mention}. Selesaikan dulu ya!",
                         color=self.config.COLOR_ERROR
                     )
-                    await interaction.response.send_message(embed=embed, ephemeral=True)
+                    await interaction.edit_original_response(content=None, embed=embed, view=None)
                     return
             
             # Check if patungan is full
@@ -863,11 +863,6 @@ class TicketHandler:
             channel_name = f"{product_name.lower().replace(' ', '-')}-{safe_username}"
             
             # Create channel
-            # Gunakan kategori yang sudah ditemukan di atas
-            if not category:
-                 # Jika kategori belum ada sama sekali, buat baru atau fallback
-                 category = discord.utils.get(guild.categories, id=self.config.TICKET_CATEGORY_ID)
-
             overwrites = {
                 guild.default_role: discord.PermissionOverwrite(read_messages=False),
                 user: discord.PermissionOverwrite(read_messages=True, send_messages=True, attach_files=True),
