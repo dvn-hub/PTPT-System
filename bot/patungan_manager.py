@@ -289,11 +289,11 @@ class PatunganManager:
         embed.add_field(name="⏳ **Durasi:**", value=f"{duration} Jam", inline=True)
         # embed.add_field(name="<:000iconlucky:1455059401860976767> Status", value=f"{status_emoji} {patungan.status.upper()}", inline=True) # Removed to match request fields
         
-        # Add Start Info
+        # Add Start Info to Announcement
         start_mode = getattr(patungan, 'start_mode', 'full_slot')
-        
-        # Robust handling for start_schedule (Handle string/datetime)
         schedule_dt = getattr(patungan, 'start_schedule', None)
+        
+        # Robust handling for string/datetime
         if isinstance(schedule_dt, str):
             try:
                 schedule_dt = datetime.strptime(schedule_dt, "%Y-%m-%d %H:%M:%S.%f")
@@ -307,6 +307,7 @@ class PatunganManager:
             start_display = f"📅 {schedule_dt.strftime('%d/%m %H:%M')} WIB"
         else:
             start_display = f"{Emojis.LOADING_CIRCLE} Full Slot"
+            
         embed.add_field(name=f"{Emojis.ROCKET} **Start:**", value=start_display, inline=True)
         
         embed.set_footer(text=f"Updated: {datetime.now().strftime('%H:%M')} WIB")
@@ -391,7 +392,7 @@ class PatunganManager:
             participants_text = "Belum ada member"
         
         # Add Script & Start Info below list
-        script_val = getattr(patungan, 'use_script', 'No')
+        script_val = getattr(patungan, 'use_script', 'Yes') # Default to Yes if missing, or check DB
         script_display = f"{Emojis.CHECK_YES_2} Yes" if script_val == "Yes" else f"{Emojis.BAN} No"
         
         start_mode = getattr(patungan, 'start_mode', 'full_slot')
