@@ -126,17 +126,11 @@ class CreatePatunganForm(ui.Modal, title='➕ Buat Patungan Baru'):
                 'start_schedule': start_schedule
             }
             
-            # Create Patungan directly (Force save new fields)
-            new_patungan = Patungan(
-                product_name=product_name,
-                price=price,
-                total_slots=max_slots,
-                status='open',
-                use_script=self.use_script,
-                start_mode=self.start_mode,
-                duration_hours=duration_hours,
-                start_schedule=start_schedule
-            )
+            # Filter keys to ensure compatibility with current Model/DB (Prevent TypeError)
+            valid_keys = {c.key for c in Patungan.__table__.columns}
+            final_data = {k: v for k, v in patungan_data.items() if k in valid_keys}
+            
+            new_patungan = Patungan(**final_data)
             self.bot.session.add(new_patungan)
             await self.bot.session.commit()
             
