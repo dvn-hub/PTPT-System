@@ -119,7 +119,11 @@ class CreatePatunganForm(ui.Modal, title='➕ Buat Patungan Baru'):
                 product_name=product_name,
                 price=price,
                 total_slots=max_slots,
-                status='open'
+                status='open',
+                use_script=self.use_script,
+                start_mode=self.start_mode,
+                duration_hours=duration_hours,
+                start_schedule=start_schedule
             )
             self.bot.session.add(new_patungan)
             await self.bot.session.commit()
