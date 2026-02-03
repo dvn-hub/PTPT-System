@@ -282,7 +282,8 @@ class PatunganManager:
         embed.add_field(name=f"{Emojis.ANIMATED_ARROW_BLUE} **Slot:**", value=f"{patungan.current_slots}/{patungan.max_slots}", inline=True)
         
         # Add new fields
-        script_status = f"{Emojis.CHECK_YES_2} Yes" if getattr(patungan, 'use_script', 'No') == "Yes" else f"{Emojis.BAN} No"
+        script_val = getattr(patungan, 'use_script', 'No')
+        script_status = f"{Emojis.CHECK_YES_2} Yes" if script_val == "Yes" else f"{Emojis.BAN} No"
         embed.add_field(name="📜 **Script:**", value=script_status, inline=True)
         
         duration = getattr(patungan, 'duration_hours', 24)
@@ -392,7 +393,7 @@ class PatunganManager:
             participants_text = "Belum ada member"
         
         # Add Script & Start Info below list
-        script_val = getattr(patungan, 'use_script', 'No') # Default to No for old products/safety
+        script_val = getattr(patungan, 'use_script', 'No')
         script_display = f"{Emojis.CHECK_YES_2} Yes" if script_val == "Yes" else f"{Emojis.BAN} No"
         
         start_mode = getattr(patungan, 'start_mode', 'full_slot')
