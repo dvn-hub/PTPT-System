@@ -280,6 +280,13 @@ class PatunganManager:
         price_display = f"Rp {patungan.price_per_slot:,}" if patungan.price_per_slot > 0 else "GRATIS"
         embed.add_field(name=f"{Emojis.MONEY_BAG} **Price:**", value=price_display, inline=True)
         embed.add_field(name=f"{Emojis.ANIMATED_ARROW_BLUE} **Slot:**", value=f"{patungan.current_slots}/{patungan.max_slots}", inline=True)
+        
+        # Add new fields
+        script_status = "✅ Yes" if getattr(patungan, 'use_script', 'No') == "Yes" else "❌ No"
+        embed.add_field(name="📜 **Script:**", value=script_status, inline=True)
+        
+        duration = getattr(patungan, 'duration_hours', 24)
+        embed.add_field(name="⏳ **Durasi:**", value=f"{duration} Jam", inline=True)
         # embed.add_field(name="<:000iconlucky:1455059401860976767> Status", value=f"{status_emoji} {patungan.status.upper()}", inline=True) # Removed to match request fields
         
         embed.set_footer(text=f"Updated: {datetime.now().strftime('%H:%M')}")
@@ -298,17 +305,25 @@ class PatunganManager:
         result = await self.bot.session.execute(stmt)
         current_slots = result.scalar() or 0
 
-        # Determine color based on status
-        match patungan.status:
-            case 'open':
-                color = self.config.COLOR_SUCCESS
-                status_emoji = "🟢"
-            case 'closed':
-                color = self.config.COLOR_ERROR
-                status_emoji = "🔴"
-            case _:
-                color = self.config.COLOR_NEUTRAL
-                status_emoji = "⚪"
+        # Determine status display
+        remaining_slots = patungan.total_slots - current_slots
+        
+        if current_slots >= patungan.total_slots:
+            status_text = "CLOSED"
+            status_emoji = "🔴"
+            color = self.config.COLOR_ERROR
+        elif patungan.status == 'open':
+            status_text = f"OPEN - Sisa {remaining_slots} Slot"
+            status_emoji = "🟢"
+            color = self.config.COLOR_SUCCESS
+        elif patungan.status == 'closed':
+            status_text = "CLOSED"
+            status_emoji = "🔴"
+            color = self.config.COLOR_ERROR
+        else:
+            status_text = patungan.status.upper()
+            status_emoji = "⚪"
+            color = self.config.COLOR_NEUTRAL
         
         # Calculate progress
         progress_percent = int((current_slots / patungan.total_slots) * 100)
@@ -367,7 +382,7 @@ class PatunganManager:
         embed.add_field(name=f"{Emojis.ICON_LUCKY} Slot", value=f"{current_slots}/{patungan.total_slots}", inline=True)
         
         embed.add_field(name=f"{Emojis.TYPING} Progress", value=f"{progress_bar} {progress_percent}%", inline=True)
-        embed.add_field(name=f"{Emojis.RING_BELL} Status", value=f"{status_emoji} {patungan.status.upper()}", inline=True)
+        embed.add_field(name=f"{Emojis.RING_BELL} Status", value=f"{status_emoji} {status_text}", inline=True)
         
         embed.set_footer(text=f"ID: {patungan.id} | Updated: {datetime.now().strftime('%H:%M')}")
         

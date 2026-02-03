@@ -159,8 +159,8 @@ class AdminDashboardView(ui.View):
             )
             return
         
-        form = CreatePatunganForm(self.bot)
-        await interaction.response.send_modal(form)
+        view = CreatePatunganWizardView(self.bot)
+        await interaction.response.send_message("Silakan pilih konfigurasi patungan:", view=view, ephemeral=True)
     
     @ui.button(label='📋 Kelola Patungan', style=discord.ButtonStyle.primary, custom_id='admin_manage_patungan')
     async def manage_patungan(self, interaction: discord.Interaction, button: ui.Button):
@@ -531,3 +531,32 @@ class RemoveParticipantModal(ui.Modal, title="🗑️ Hapus Member (Cancel Slot)
             self.product_name.value.strip().upper(), 
             self.username.value.strip()
         )
+
+class CreatePatunganWizardView(ui.View):
+    """Wizard View untuk setup awal patungan (Script & Start Mode)"""
+    def __init__(self, bot):
+        super().__init__(timeout=120)
+        self.bot = bot
+        self.use_script = "Yes" # Default
+        self.start_mode = "full_slot" # Default
+
+    @ui.select(placeholder="Pilih Opsi Script...", options=[
+        discord.SelectOption(label="Script", value="Yes", description="Produk ini menggunakan Script", emoji="📜"),
+        discord.SelectOption(label="No Script", value="No", description="Produk ini TANPA Script", emoji="🚫")
+    ])
+    async def select_script(self, interaction: discord.Interaction, select: ui.Select):
+        self.use_script = select.values[0]
+        await interaction.response.defer()
+
+    @ui.select(placeholder="Pilih Opsi Start...", options=[
+        discord.SelectOption(label="Full Slot", value="full_slot", description="Start otomatis saat slot penuh", emoji="🌕"),
+        discord.SelectOption(label="Jadwal Tertentu", value="schedule", description="Start sesuai tanggal/jam", emoji="📅")
+    ])
+    async def select_start(self, interaction: discord.Interaction, select: ui.Select):
+        self.start_mode = select.values[0]
+        await interaction.response.defer()
+
+    @ui.button(label="Lanjut ke Detail", style=discord.ButtonStyle.primary, emoji="➡️")
+    async def next_step(self, interaction: discord.Interaction, button: ui.Button):
+        form = CreatePatunganForm(self.bot, self.use_script, self.start_mode)
+        await interaction.response.send_modal(form)

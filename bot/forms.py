@@ -6,18 +6,21 @@ from config import Config, Emojis
 from database.crud import create_patungan, get_patungan, get_setting, set_setting
 from utils.validators import validate_price
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
 class CreatePatunganForm(ui.Modal, title='➕ Buat Patungan Baru'):
-    def __init__(self, bot):
+    def __init__(self, bot, use_script, start_mode):
         super().__init__(timeout=300)
         self.bot = bot
         self.config = Config()
+        self.use_script = use_script
+        self.start_mode = start_mode
         
         # Product Name
         self.product_name = ui.TextInput(
-            label='Nama Produk',
+            label='Versi (V1, V2, ...)',
             placeholder='Contoh: V1, V2, HIGGS-1M',
             style=discord.TextStyle.short,
             required=True,
@@ -46,6 +49,28 @@ class CreatePatunganForm(ui.Modal, title='➕ Buat Patungan Baru'):
             max_length=2
         )
         self.add_item(self.max_slots)
+
+        # Duration
+        self.duration = ui.TextInput(
+            label='Durasi (Jam)',
+            placeholder='Contoh: 24',
+            style=discord.TextStyle.short,
+            required=True,
+            default='24',
+            max_length=3
+        )
+        self.add_item(self.duration)
+
+        # Schedule (Only if start_mode is schedule, but we add it anyway as optional if modal allows, or just required if mode is schedule)
+        if self.start_mode == 'schedule':
+            self.schedule_input = ui.TextInput(
+                label='Jadwal Start (YYYY-MM-DD HH:MM)',
+                placeholder='2024-12-31 20:00',
+                style=discord.TextStyle.short,
+                required=True,
+                max_length=20
+            )
+            self.add_item(self.schedule_input)
     
     async def on_submit(self, interaction: discord.Interaction):
         """Handle form submission"""
@@ -73,6 +98,15 @@ class CreatePatunganForm(ui.Modal, title='➕ Buat Patungan Baru'):
                 return
             
             max_slots = int(self.max_slots.value)
+            duration_hours = int(self.duration.value)
+            
+            start_schedule = None
+            if self.start_mode == 'schedule':
+                try:
+                    start_schedule = datetime.strptime(self.schedule_input.value, "%Y-%m-%d %H:%M")
+                except ValueError:
+                    await interaction.response.send_message(f"{Emojis.WARNING} Format tanggal salah! Gunakan YYYY-MM-DD HH:MM", ephemeral=True)
+                    return
             
             # Defer response because creating multiple might take time
             await interaction.response.defer(ephemeral=True)
@@ -84,7 +118,11 @@ class CreatePatunganForm(ui.Modal, title='➕ Buat Patungan Baru'):
                 product_name=product_name,
                 price=price,
                 total_slots=max_slots,
-                status='open'
+                status='open',
+                use_script=self.use_script,
+                start_mode=self.start_mode,
+                duration_hours=duration_hours,
+                start_schedule=start_schedule
             )
             self.bot.session.add(new_patungan)
             await self.bot.session.commit()
@@ -99,6 +137,11 @@ class CreatePatunganForm(ui.Modal, title='➕ Buat Patungan Baru'):
                 )
                 embed.add_field(name=f"{Emojis.MONEY_BAG} **Price:**", value=f"Rp {price:,}", inline=True)
                 embed.add_field(name=f"{Emojis.ANIMATED_ARROW_BLUE} **Slot:**", value=f"{max_slots} Slot Available", inline=True)
+                
+                script_text = "✅ Yes" if self.use_script == "Yes" else "❌ No"
+                embed.add_field(name="📜 **Script:**", value=script_text, inline=True)
+                embed.add_field(name="⏳ **Durasi:**", value=f"{duration_hours} Jam", inline=True)
+                
                 await announcement_channel.send(embed=embed)
             
             # 2. Update List
