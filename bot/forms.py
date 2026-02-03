@@ -64,7 +64,7 @@ class CreatePatunganForm(ui.Modal, title='➕ Buat Patungan Baru'):
         # Schedule (Only if start_mode is schedule, but we add it anyway as optional if modal allows, or just required if mode is schedule)
         if self.start_mode == 'schedule':
             self.schedule_input = ui.TextInput(
-                label='Jadwal Start (YYYY-MM-DD HH:MM)',
+                label='Jadwal Start (YYYY-MM-DD HH:MM) WIB',
                 placeholder='2024-12-31 20:00',
                 style=discord.TextStyle.short,
                 required=True,

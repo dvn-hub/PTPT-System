@@ -537,7 +537,7 @@ class TicketHandler:
             
             embed.add_field(name="User", value=message.author.name, inline=True)
             embed.add_field(name="Ticket", value=message.channel.mention, inline=True)
-            embed.add_field(name="Waktu", value=datetime.now().strftime("%H:%M"), inline=True)
+            embed.add_field(name="Waktu", value=datetime.now().strftime("%H:%M") + " WIB", inline=True)
             
             # Send to admin dashboard
             dashboard_channel = discord.utils.get(
@@ -670,7 +670,7 @@ class TicketHandler:
             
             embed.add_field(name="User", value=f"<@{info['user_id']}>", inline=True)
             embed.add_field(name="Status", value=info['status'].upper(), inline=True)
-            embed.add_field(name="Dibuka", value=info['opened_at'].strftime("%d/%m %H:%M"), inline=True)
+            embed.add_field(name="Dibuka", value=info['opened_at'].strftime("%d/%m %H:%M") + " WIB", inline=True)
             
             if info['slots']:
                 slot_info = ""

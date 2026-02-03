@@ -289,7 +289,7 @@ class PatunganManager:
         embed.add_field(name="⏳ **Durasi:**", value=f"{duration} Jam", inline=True)
         # embed.add_field(name="<:000iconlucky:1455059401860976767> Status", value=f"{status_emoji} {patungan.status.upper()}", inline=True) # Removed to match request fields
         
-        embed.set_footer(text=f"Updated: {datetime.now().strftime('%H:%M')}")
+        embed.set_footer(text=f"Updated: {datetime.now().strftime('%H:%M')} WIB")
         return embed
 
     async def create_patungan_embed(self, patungan) -> discord.Embed:
@@ -384,7 +384,7 @@ class PatunganManager:
         embed.add_field(name=f"{Emojis.TYPING} Progress", value=f"{progress_bar} {progress_percent}%", inline=True)
         embed.add_field(name=f"{Emojis.RING_BELL} Status", value=f"{status_emoji} {status_text}", inline=True)
         
-        embed.set_footer(text=f"ID: {patungan.id} | Updated: {datetime.now().strftime('%H:%M')}")
+        embed.set_footer(text=f"ID: {patungan.id} | Updated: {datetime.now().strftime('%H:%M')} WIB")
         
         return embed
     
@@ -492,7 +492,7 @@ class PatunganManager:
                         
                         user_embed.add_field(name="Slot", value=slot.game_username, inline=True)
                         user_embed.add_field(name="Harga", value=f"Rp {slot.locked_price:,}", inline=True)
-                        user_embed.add_field(name="Deadline", value=deadline_end.strftime("%d/%m %H:%M"), inline=True)
+                        user_embed.add_field(name="Deadline", value=deadline_end.strftime("%d/%m %H:%M") + " WIB", inline=True)
                         
                         await ticket_channel.send(embed=user_embed)
                 except:
@@ -701,7 +701,7 @@ class PatunganManager:
             
             embed.add_field(
                 name="Tanggal & Waktu",
-                value=schedule_time.strftime("%A, %d %B %Y %H:%M"),
+                value=schedule_time.strftime("%A, %d %B %Y %H:%M") + " WIB",
                 inline=False
             )
             
