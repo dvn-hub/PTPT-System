@@ -392,7 +392,7 @@ class PatunganManager:
             participants_text = "Belum ada member"
         
         # Add Script & Start Info below list
-        script_val = getattr(patungan, 'use_script', 'Yes') # Default to Yes if missing, or check DB
+        script_val = getattr(patungan, 'use_script', 'No') # Default to No for old products/safety
         script_display = f"{Emojis.CHECK_YES_2} Yes" if script_val == "Yes" else f"{Emojis.BAN} No"
         
         start_mode = getattr(patungan, 'start_mode', 'full_slot')

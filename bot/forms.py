@@ -114,17 +114,23 @@ class CreatePatunganForm(ui.Modal, title='➕ Buat Patungan Baru'):
             # Create Patungan in DB
             from database.models import Patungan
             
-            # Create Patungan directly (Force save new fields)
-            new_patungan = Patungan(
-                product_name=product_name,
-                price=price,
-                total_slots=max_slots,
-                status='open',
-                use_script=self.use_script,
-                start_mode=self.start_mode,
-                duration_hours=duration_hours,
-                start_schedule=start_schedule
-            )
+            # Prepare data dictionary
+            patungan_data = {
+                'product_name': product_name,
+                'price': price,
+                'total_slots': max_slots,
+                'status': 'open',
+                'use_script': self.use_script,
+                'start_mode': self.start_mode,
+                'duration_hours': duration_hours,
+                'start_schedule': start_schedule
+            }
+            
+            # Filter keys to ensure compatibility with current Model/DB (Prevent TypeError)
+            valid_keys = {c.key for c in Patungan.__table__.columns}
+            final_data = {k: v for k, v in patungan_data.items() if k in valid_keys}
+            
+            new_patungan = Patungan(**final_data)
             self.bot.session.add(new_patungan)
             await self.bot.session.commit()
             
@@ -142,6 +148,13 @@ class CreatePatunganForm(ui.Modal, title='➕ Buat Patungan Baru'):
                 script_text = f"{Emojis.CHECK_YES_2} Yes" if self.use_script == "Yes" else f"{Emojis.BAN} No"
                 embed.add_field(name="📜 **Script:**", value=script_text, inline=True)
                 embed.add_field(name="⏳ **Durasi:**", value=f"{duration_hours} Jam", inline=True)
+                
+                # Add Start Info to Announcement (Immediate display from form data)
+                if self.start_mode == 'schedule' and start_schedule:
+                    start_display = f"📅 {start_schedule.strftime('%d/%m %H:%M')} WIB"
+                else:
+                    start_display = f"{Emojis.LOADING_CIRCLE} Full Slot"
+                embed.add_field(name=f"{Emojis.ROCKET} **Start:**", value=start_display, inline=True)
                 
                 await announcement_channel.send(embed=embed)
             
