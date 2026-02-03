@@ -293,7 +293,7 @@ class PatunganManager:
         start_mode = getattr(patungan, 'start_mode', 'full_slot')
         
         # Robust handling for start_schedule (Handle string/datetime)
-        schedule_dt = patungan.start_schedule
+        schedule_dt = getattr(patungan, 'start_schedule', None)
         if isinstance(schedule_dt, str):
             try:
                 schedule_dt = datetime.strptime(schedule_dt, "%Y-%m-%d %H:%M:%S.%f")
@@ -397,7 +397,7 @@ class PatunganManager:
         start_mode = getattr(patungan, 'start_mode', 'full_slot')
         
         # Robust handling for start_schedule
-        schedule_dt = patungan.start_schedule
+        schedule_dt = getattr(patungan, 'start_schedule', None)
         if isinstance(schedule_dt, str):
             try:
                 schedule_dt = datetime.strptime(schedule_dt, "%Y-%m-%d %H:%M:%S.%f")
@@ -1006,9 +1006,13 @@ class PatunganManager:
                 schedules = await get_upcoming_schedules(self.bot.session)
                 
                 for patungan in schedules:
-                    if patungan.start_schedule and patungan.start_schedule < datetime.now():
+                    start_schedule = getattr(patungan, 'start_schedule', None)
+                    if start_schedule and start_schedule < datetime.now():
                         # Schedule time reached
-                        await self.process_schedule_start(patungan.version)
+                        # Use product_name as version if version attr missing
+                        version = getattr(patungan, 'product_name', getattr(patungan, 'version', None))
+                        if version:
+                            await self.process_schedule_start(version)
                 
             except Exception as e:
                 logger.error(f"Error in schedule check: {e}")
