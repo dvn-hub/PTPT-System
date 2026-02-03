@@ -289,6 +289,26 @@ class PatunganManager:
         embed.add_field(name="⏳ **Durasi:**", value=f"{duration} Jam", inline=True)
         # embed.add_field(name="<:000iconlucky:1455059401860976767> Status", value=f"{status_emoji} {patungan.status.upper()}", inline=True) # Removed to match request fields
         
+        # Add Start Info
+        start_mode = getattr(patungan, 'start_mode', 'full_slot')
+        
+        # Robust handling for start_schedule (Handle string/datetime)
+        schedule_dt = patungan.start_schedule
+        if isinstance(schedule_dt, str):
+            try:
+                schedule_dt = datetime.strptime(schedule_dt, "%Y-%m-%d %H:%M:%S.%f")
+            except ValueError:
+                try:
+                    schedule_dt = datetime.strptime(schedule_dt, "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    schedule_dt = None
+        
+        if start_mode == 'schedule' and schedule_dt:
+            start_display = f"📅 {schedule_dt.strftime('%d/%m %H:%M')} WIB"
+        else:
+            start_display = f"{Emojis.LOADING_CIRCLE} Full Slot"
+        embed.add_field(name=f"{Emojis.ROCKET} **Start:**", value=start_display, inline=True)
+        
         embed.set_footer(text=f"Updated: {datetime.now().strftime('%H:%M')} WIB")
         return embed
 
@@ -371,16 +391,28 @@ class PatunganManager:
             participants_text = "Belum ada member"
         
         # Add Script & Start Info below list
-        script_val = getattr(patungan, 'use_script', 'Yes')
+        script_val = getattr(patungan, 'use_script', 'No')
         script_display = f"{Emojis.CHECK_YES_2} Yes" if script_val == "Yes" else f"{Emojis.BAN} No"
         
         start_mode = getattr(patungan, 'start_mode', 'full_slot')
-        if start_mode == 'schedule' and patungan.start_schedule:
-            start_display = f"📅 {patungan.start_schedule.strftime('%d/%m %H:%M')} WIB"
+        
+        # Robust handling for start_schedule
+        schedule_dt = patungan.start_schedule
+        if isinstance(schedule_dt, str):
+            try:
+                schedule_dt = datetime.strptime(schedule_dt, "%Y-%m-%d %H:%M:%S.%f")
+            except ValueError:
+                try:
+                    schedule_dt = datetime.strptime(schedule_dt, "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    schedule_dt = None
+
+        if start_mode == 'schedule' and schedule_dt:
+            start_display = f"📅 {schedule_dt.strftime('%d/%m %H:%M')} WIB"
         else:
-            start_display = f"{Emojis.ICON_LUCKY} Full Slot"
+            start_display = f"{Emojis.LOADING_CIRCLE} Full Slot"
             
-        participants_text += f"\n\n📜 **Script:** {script_display}\n🚀 **Start:** {start_display}"
+        participants_text += f"\n\n📜 **Script:** {script_display}\n{Emojis.ROCKET} **Start:** {start_display}"
         
         duration = getattr(patungan, 'duration_hours', 24)
 
