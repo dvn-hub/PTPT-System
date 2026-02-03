@@ -829,17 +829,24 @@ class TicketHandler:
             
             existing_channel = None
             
+            # Clean username to be channel-safe
+            safe_username = "".join(c for c in user.name if c.isalnum()).lower()
+            target_prefix = f"{product_name.lower().replace(' ', '-')}-"
+            
             if category:
                 for ch in category.text_channels:
                     # Check by Topic (ID) or Name (Username)
-                    if (ch.topic and str(user.id) in ch.topic) or (user.name.lower() in ch.name.lower()):
+                    is_user_channel = (ch.topic and str(user.id) in ch.topic) or (f"-{safe_username}" in ch.name)
+                    
+                    # Check if it matches the CURRENT product
+                    if is_user_channel and ch.name.startswith(target_prefix):
                         existing_channel = ch
                         break
             
             if existing_channel:
                     embed = discord.Embed(
                         title=f"{Emojis.BAN} **ACTION DENIED**",
-                        description=f"⚠️ Kamu masih punya tiket aktif di {existing_channel.mention}. Selesaikan dulu ya!",
+                        description=f"⚠️ Kamu sudah punya tiket aktif untuk **{product_name}** di {existing_channel.mention}.",
                         color=self.config.COLOR_ERROR
                     )
                     await interaction.edit_original_response(content=None, embed=embed, view=None)
@@ -870,7 +877,6 @@ class TicketHandler:
 
             # Format: (nama_produk)-displayname_user
             # Clean username to be channel-safe
-            safe_username = "".join(c for c in user.name if c.isalnum()).lower()
             channel_name = f"{product_name.lower().replace(' ', '-')}-{safe_username}"
             
             # Create channel

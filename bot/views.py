@@ -230,7 +230,7 @@ class AdminDashboardView(ui.View):
             await interaction.response.send_message("❌ Tidak ada patungan.", ephemeral=True)
             return
             
-        view = RemoveParticipantProductView(self.bot, patungans)
+        view = RemoveParticipantSelectProductView(self.bot, patungans)
         await interaction.response.send_message("Pilih patungan:", view=view, ephemeral=True)
 
     @ui.button(label='🗑️ Hapus Patungan', style=discord.ButtonStyle.danger, custom_id='admin_delete_patungan', row=1)
@@ -431,6 +431,80 @@ class RatingView(ui.View):
     async def rate_5(self, interaction: discord.Interaction, button: ui.Button): await self.handle_rating(interaction, 5)
     @ui.button(label='No Thanks', style=discord.ButtonStyle.danger)
     async def no_thanks(self, interaction: discord.Interaction, button: ui.Button): await interaction.message.delete()
+
+class RemoveParticipantSelectProductView(ui.View):
+    """View untuk memilih produk sebelum hapus member"""
+    def __init__(self, bot, patungans):
+        super().__init__(timeout=60)
+        self.bot = bot
+        
+        options = []
+        seen = set()
+        for p in patungans:
+            if p.product_name not in seen:
+                options.append(discord.SelectOption(
+                    label=p.product_name,
+                    value=p.product_name
+                ))
+                seen.add(p.product_name)
+                if len(options) >= 25: break
+        
+        select = ui.Select(placeholder="Pilih Produk...", options=options)
+        select.callback = self.callback
+        self.add_item(select)
+
+    async def callback(self, interaction: discord.Interaction):
+        product_name = interaction.data['values'][0]
+        
+        # Fetch slots
+        from database.models import UserSlot
+        from sqlalchemy import select
+        
+        stmt = select(UserSlot).where(
+            UserSlot.patungan_version == product_name,
+            UserSlot.slot_status.in_(['booked', 'waiting_payment', 'paid'])
+        ).order_by(UserSlot.slot_number)
+        
+        result = await self.bot.session.execute(stmt)
+        slots = result.scalars().all()
+        
+        if not slots:
+            await interaction.response.send_message(f"❌ Tidak ada member aktif di {product_name}.", ephemeral=True)
+            return
+            
+        view = RemoveParticipantSelectSlotView(self.bot, product_name, slots)
+        await interaction.response.send_message(f"Pilih member yang akan dihapus dari **{product_name}**:", view=view, ephemeral=True)
+
+class RemoveParticipantSelectSlotView(ui.View):
+    """View untuk memilih slot user yang akan dihapus"""
+    def __init__(self, bot, product_name, slots):
+        super().__init__(timeout=60)
+        self.bot = bot
+        self.product_name = product_name
+        
+        options = []
+        for slot in slots:
+            label = f"Slot {slot.slot_number}: {slot.game_username}"
+            if len(label) > 100: label = label[:97] + "..."
+            
+            options.append(discord.SelectOption(
+                label=label,
+                value=slot.game_username,
+                description=f"Status: {slot.slot_status.upper()}"
+            ))
+            if len(options) >= 25: break
+            
+        select = ui.Select(placeholder="Pilih Member...", options=options)
+        select.callback = self.callback
+        self.add_item(select)
+
+    async def callback(self, interaction: discord.Interaction):
+        username = interaction.data['values'][0]
+        await self.bot.admin_handler.remove_participant_slot(
+            interaction, 
+            self.product_name, 
+            username
+        )
 
 class RemoveParticipantModal(ui.Modal, title="🗑️ Hapus Member (Cancel Slot)"):
     """Modal untuk menghapus member dari slot"""
