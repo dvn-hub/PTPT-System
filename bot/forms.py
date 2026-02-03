@@ -118,7 +118,11 @@ class CreatePatunganForm(ui.Modal, title='➕ Buat Patungan Baru'):
                 product_name=product_name,
                 price=price,
                 total_slots=max_slots,
-                status='open'
+                status='open',
+                use_script=self.use_script,
+                start_mode=self.start_mode,
+                duration_hours=duration_hours,
+                start_schedule=start_schedule
             )
             self.bot.session.add(new_patungan)
             await self.bot.session.commit()
@@ -134,7 +138,7 @@ class CreatePatunganForm(ui.Modal, title='➕ Buat Patungan Baru'):
                 embed.add_field(name=f"{Emojis.MONEY_BAG} **Price:**", value=f"Rp {price:,}", inline=True)
                 embed.add_field(name=f"{Emojis.ANIMATED_ARROW_BLUE} **Slot:**", value=f"{max_slots} Slot Available", inline=True)
                 
-                script_text = "✅ Yes" if self.use_script == "Yes" else "❌ No"
+                script_text = f"{Emojis.CHECK_YES_2} Yes" if self.use_script == "Yes" else f"{Emojis.BAN} No"
                 embed.add_field(name="📜 **Script:**", value=script_text, inline=True)
                 embed.add_field(name="⏳ **Durasi:**", value=f"{duration_hours} Jam", inline=True)
                 

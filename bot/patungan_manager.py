@@ -282,7 +282,7 @@ class PatunganManager:
         embed.add_field(name=f"{Emojis.ANIMATED_ARROW_BLUE} **Slot:**", value=f"{patungan.current_slots}/{patungan.max_slots}", inline=True)
         
         # Add new fields
-        script_status = "✅ Yes" if getattr(patungan, 'use_script', 'No') == "Yes" else "❌ No"
+        script_status = f"{Emojis.CHECK_YES_2} Yes" if getattr(patungan, 'use_script', 'No') == "Yes" else f"{Emojis.BAN} No"
         embed.add_field(name="📜 **Script:**", value=script_status, inline=True)
         
         duration = getattr(patungan, 'duration_hours', 24)
@@ -310,19 +310,19 @@ class PatunganManager:
         
         if current_slots >= patungan.total_slots:
             main_status_text = "CLOSED"
-            status_emoji = "🔴"
+            status_emoji = Emojis.BAN
             color = self.config.COLOR_ERROR
         elif patungan.status == 'open':
             main_status_text = f"OPEN - Sisa {remaining_slots} Slot"
-            status_emoji = "🟢"
+            status_emoji = Emojis.OPEN_SIGN
             color = self.config.COLOR_SUCCESS
         elif patungan.status == 'closed':
             main_status_text = "CLOSED"
-            status_emoji = "🔴"
+            status_emoji = Emojis.BAN
             color = self.config.COLOR_ERROR
         else:
             main_status_text = patungan.status.upper()
-            status_emoji = "⚪"
+            status_emoji = Emojis.LOADING_CIRCLE
             color = self.config.COLOR_NEUTRAL
         
         # Calculate progress
@@ -372,13 +372,13 @@ class PatunganManager:
         
         # Add Script & Start Info below list
         script_val = getattr(patungan, 'use_script', 'Yes')
-        script_display = "✅ Yes" if script_val == "Yes" else "❌ No"
+        script_display = f"{Emojis.CHECK_YES_2} Yes" if script_val == "Yes" else f"{Emojis.BAN} No"
         
         start_mode = getattr(patungan, 'start_mode', 'full_slot')
         if start_mode == 'schedule' and patungan.start_schedule:
             start_display = f"📅 {patungan.start_schedule.strftime('%d/%m %H:%M')} WIB"
         else:
-            start_display = "🌕 Full Slot"
+            start_display = f"{Emojis.ICON_LUCKY} Full Slot"
             
         participants_text += f"\n\n📜 **Script:** {script_display}\n🚀 **Start:** {start_display}"
         
