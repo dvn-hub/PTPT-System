@@ -206,6 +206,11 @@ class PatunganBot(commands.Bot):
                 if any(role_id in user_roles for role_id in allowed_roles):
                     await message.channel.send(f"🔗 **Private Server Link:**\n{self.config.PRIVATE_SERVER_LINK}")
         
+        # Manual Command: .close (Close Ticket - Admin Only)
+        if message.content.lower() == '.close':
+            if isinstance(message.author, discord.Member):
+                await self.ticket_handler.handle_admin_close_ticket_from_message(message)
+
         # Manual Command: !setworkers (Update list workers dynamic)
         if message.content.lower().startswith('!setworkers'):
             # Check permission

@@ -808,6 +808,61 @@ class TicketHandler:
         except Exception as e:
             logger.error(f"Error in admin close ticket: {e}")
 
+    async def handle_admin_close_ticket_from_message(self, message: discord.Message):
+        """Handle ticket closing by admin via command .close"""
+        try:
+            # 1. VALIDASI PERMISSION
+            user_roles = [r.id for r in message.author.roles]
+            allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS
+            
+            if not any(role_id in user_roles for role_id in allowed_roles):
+                await message.channel.send(f"{Emojis.WARNING} Hanya Admin yang bisa tutup ticket.")
+                return
+
+            # Get ticket info before deletion
+            channel = message.channel
+            ticket = await get_ticket_by_channel(self.bot.session, str(channel.id))
+            
+            if not ticket:
+                await message.channel.send("❌ Channel ini bukan ticket yang terdaftar di database.")
+                return
+
+            ticket_name = channel.name
+            admin_name = message.author.name
+            ticket_owner_id = ticket.discord_user_id
+            
+            # 2. DELETE CHANNEL
+            await channel.delete()
+            
+            # Update DB
+            ticket.ticket_status = 'closed'
+            ticket.close_reason = f'Closed by {admin_name} (.close)'
+            ticket.closed_at = datetime.now()
+            await self.bot.session.commit()
+                
+            # 3. KIRIM DM KE USER (RATING)
+            if ticket_owner_id:
+                try:
+                    guild = message.guild
+                    member = guild.get_member(int(ticket_owner_id))
+                    if member:
+                        view = RatingView(self.bot, ticket_name, admin_name)
+                        embed = discord.Embed(title=f"{Emojis.CHECK_YES_2} **TICKET CLOSED • SESSION ENDED**", 
+                                            description=f"Terima kasih telah mempercayai {Emojis.FIRE_BLUE} **DVN Store**.\n"
+                                                        f"Sesi tiket Anda telah diselesaikan oleh Admin.\n\n"
+                                                        f"{Emojis.ANNOUNCEMENTS} **Bantu kami meningkatkan layanan dengan memberi rating:**\n\n"
+                                                        f"**📊 TICKET SUMMARY**\n"
+                                                        f"{Emojis.TICKET} **Ticket ID:** `{ticket_name}`\n"
+                                                        f"{Emojis.DISCORD_CHRISTMAS} **Server:** DVN Official\n"
+                                                        f"{Emojis.VERIFIED_2} **Handled By:** `{admin_name}`",
+                                            color=self.config.COLOR_SUCCESS)
+                        await member.send(embed=embed, view=view)
+                except Exception as e:
+                    logger.error(f"Failed to send rating DM: {e}")
+                    
+        except Exception as e:
+            logger.error(f"Error in admin close ticket message: {e}")
+
     async def create_ticket_with_product(self, interaction: discord.Interaction, product_name: str):
         """Create ticket after product selection"""
         try:
