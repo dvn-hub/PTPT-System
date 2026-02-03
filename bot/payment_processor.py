@@ -172,7 +172,7 @@ class PaymentProcessor:
         embed.add_field(name='Status', value=amount_status, inline=True)
         
         embed.set_image(url=payment_record.proof_image_url)
-        embed.add_field(name='Waktu', value=payment_record.detected_at.strftime('%d/%m %H:%M'), inline=True)
+        embed.add_field(name='Waktu', value=payment_record.detected_at.strftime('%d/%m %H:%M') + " WIB", inline=True)
         
         if payment_record.notes:
             embed.add_field(name='Catatan', value=payment_record.notes, inline=False)
