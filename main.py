@@ -186,8 +186,8 @@ class PatunganBot(commands.Bot):
             if message.attachments:
                 await ui.handle_stock_payment(self, message)
         
-        # Manual Command: !qr (QRIS Image - Admin Only)
-        if message.content.lower() == '!qr':
+        # Manual Command: .qr (QRIS Image - Admin Only)
+        if message.content.lower() == '.qr':
             if isinstance(message.author, discord.Member):
                 user_roles = [r.id for r in message.author.roles]
                 allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID]
@@ -197,8 +197,8 @@ class PatunganBot(commands.Bot):
                     embed.set_image(url=self.config.QRIS_IMAGE_URL)
                     await message.channel.send(embed=embed)
 
-        # Manual Command: !ps (Private Server Link - Admin Only)
-        if message.content.lower() == '!ps':
+        # Manual Command: .ps (Private Server Link - Admin Only)
+        if message.content.lower() == '.ps':
             if isinstance(message.author, discord.Member):
                 user_roles = [r.id for r in message.author.roles]
                 allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID]
