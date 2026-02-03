@@ -309,19 +309,19 @@ class PatunganManager:
         remaining_slots = patungan.total_slots - current_slots
         
         if current_slots >= patungan.total_slots:
-            status_text = "CLOSED"
+            main_status_text = "CLOSED"
             status_emoji = "🔴"
             color = self.config.COLOR_ERROR
         elif patungan.status == 'open':
-            status_text = f"OPEN - Sisa {remaining_slots} Slot"
+            main_status_text = f"OPEN - Sisa {remaining_slots} Slot"
             status_emoji = "🟢"
             color = self.config.COLOR_SUCCESS
         elif patungan.status == 'closed':
-            status_text = "CLOSED"
+            main_status_text = "CLOSED"
             status_emoji = "🔴"
             color = self.config.COLOR_ERROR
         else:
-            status_text = patungan.status.upper()
+            main_status_text = patungan.status.upper()
             status_emoji = "⚪"
             color = self.config.COLOR_NEUTRAL
         
@@ -353,26 +353,40 @@ class PatunganManager:
                 
                 if slot.slot_status == 'paid':
                     emoji = Emojis.VERIFIED
-                    status_text = "PAID"
+                    slot_status_text = "PAID"
                 elif slot.slot_status == 'booked':
                     emoji = Emojis.LOADING_CIRCLE
-                    status_text = "BOOKED"
+                    slot_status_text = "BOOKED"
                 else:
                     emoji = status_map.get(slot.slot_status, '❓')
-                    status_text = slot.slot_status.upper()
+                    slot_status_text = slot.slot_status.upper()
                 
                 discord_tag = f"<@{slot.ticket.discord_user_id}>" if slot.ticket else "Unknown"
                 # Format: No. UsernameRoblox - || @DisplaynameDiscord || (STATUS) [EMOJI]
-                participants_text += f"`{slot.slot_number}.` {slot.game_username} - || {discord_tag} || ({status_text}) {emoji}\n"
+                participants_text += f"`{slot.slot_number}.` {slot.game_username} - || {discord_tag} || ({slot_status_text}) {emoji}\n"
             
             if len(participants_text) > 4096:
                 participants_text = participants_text[:4093] + "..."
         else:
             participants_text = "Belum ada member"
         
+        # Add Script & Start Info below list
+        script_val = getattr(patungan, 'use_script', 'Yes')
+        script_display = "✅ Yes" if script_val == "Yes" else "❌ No"
+        
+        start_mode = getattr(patungan, 'start_mode', 'full_slot')
+        if start_mode == 'schedule' and patungan.start_schedule:
+            start_display = f"📅 {patungan.start_schedule.strftime('%d/%m %H:%M')} WIB"
+        else:
+            start_display = "🌕 Full Slot"
+            
+        participants_text += f"\n\n📜 **Script:** {script_display}\n🚀 **Start:** {start_display}"
+        
+        duration = getattr(patungan, 'duration_hours', 24)
+
         # Create embed
         embed = discord.Embed(
-            title=f"{Emojis.FIRE_BLUE} **LIVE SLOT STATUS - {patungan.product_name}**",
+            title=f"{Emojis.FIRE_BLUE} **{patungan.product_name} - {duration} Jam**",
             description=participants_text,
             color=color
         )
@@ -382,7 +396,7 @@ class PatunganManager:
         embed.add_field(name=f"{Emojis.ICON_LUCKY} Slot", value=f"{current_slots}/{patungan.total_slots}", inline=True)
         
         embed.add_field(name=f"{Emojis.TYPING} Progress", value=f"{progress_bar} {progress_percent}%", inline=True)
-        embed.add_field(name=f"{Emojis.RING_BELL} Status", value=f"{status_emoji} {status_text}", inline=True)
+        embed.add_field(name=f"{Emojis.RING_BELL} Status", value=f"{status_emoji} {main_status_text}", inline=True)
         
         embed.set_footer(text=f"ID: {patungan.id} | Updated: {datetime.now().strftime('%H:%M')} WIB")
         
