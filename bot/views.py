@@ -230,6 +230,7 @@ class AdminDashboardView(ui.View):
             await interaction.response.send_message("❌ Tidak ada patungan.", ephemeral=True)
             return
             
+        # Menggunakan View Select Product yang baru
         view = RemoveParticipantSelectProductView(self.bot, patungans)
         await interaction.response.send_message("Pilih patungan:", view=view, ephemeral=True)
 

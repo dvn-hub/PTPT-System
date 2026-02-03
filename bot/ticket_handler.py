@@ -829,9 +829,10 @@ class TicketHandler:
             
             existing_channel = None
             
-            # Clean username to be channel-safe
+             # Clean username to be channel-safe
             safe_username = "".join(c for c in user.name if c.isalnum()).lower()
-            target_prefix = f"{product_name.lower().replace(' ', '-')}-"
+            # Expected channel name for this specific product
+            expected_channel_name = f"{product_name.lower().replace(' ', '-')}-{safe_username}"
             
             if category:
                 for ch in category.text_channels:
@@ -839,7 +840,10 @@ class TicketHandler:
                     is_user_channel = (ch.topic and str(user.id) in ch.topic) or (f"-{safe_username}" in ch.name)
                     
                     # Check if it matches the CURRENT product
-                    if is_user_channel and ch.name.startswith(target_prefix):
+                    is_user_channel = (ch.topic and str(user.id) in ch.topic) or (f"-{safe_username}" in ch.name)
+                    
+                    # Check if it matches the CURRENT product exactly
+                    if is_user_channel and ch.name == expected_channel_name:
                         existing_channel = ch
                         break
             
