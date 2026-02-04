@@ -238,6 +238,9 @@ class PaymentVerificationView(ui.View):
             
             # Update slot status
             slot = await get_slot(self.bot.session, self.payment_record.slot_id)
+            if not slot:
+                await interaction.followup.send("❌ Data slot tidak ditemukan (Mungkin sudah dihapus).", ephemeral=True)
+                return
             
             # Fix: Update ALL unpaid slots in this ticket (Looping Update)
             await self._update_all_slots_in_ticket(self.bot.session, slot.ticket_id, interaction.user.name)
@@ -257,6 +260,10 @@ class PaymentVerificationView(ui.View):
             from bot.patungan_manager import PatunganManager
             manager = PatunganManager(self.bot)
             
+            if not slot.ticket:
+                await interaction.followup.send("❌ Data ticket tidak ditemukan.", ephemeral=True)
+                return
+
             await manager.grant_patungan_access(
                 user_id=slot.ticket.discord_user_id,
                 product_name=slot.patungan_version
