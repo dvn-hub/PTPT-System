@@ -253,8 +253,13 @@ class AdminHandler:
             from database.crud import get_patungan
             patungan = await get_patungan(self.bot.session, product_name)
             if patungan:
-                if hasattr(patungan, 'current_slots'):
-                    patungan.current_slots = max(0, patungan.current_slots - 1)
+                try:
+                    # Refresh object to ensure attributes are loaded
+                    await self.bot.session.refresh(patungan)
+                    if hasattr(patungan, 'current_slots'):
+                        patungan.current_slots = max(0, patungan.current_slots - 1)
+                except Exception as e:
+                    logger.error(f"Error updating slots for {product_name}: {e}")
             
             await self.bot.session.commit()
 
