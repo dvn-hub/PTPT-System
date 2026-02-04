@@ -348,6 +348,37 @@ class DaftarSlotModal(ui.Modal, title='📝 Daftar Slot'):
                 ephemeral=True
             )
 
+class PaymentForm(ui.Modal, title='Konfirmasi Pembayaran'):
+    def __init__(self, bot, slots):
+        super().__init__(timeout=300)
+        self.bot = bot
+        self.slots = slots
+        self.config = Config()
+        
+        self.bank_name = ui.TextInput(
+            label='Metode Pembayaran',
+            placeholder='Contoh: BCA, Dana, QRIS',
+            style=discord.TextStyle.short,
+            required=True
+        )
+        self.add_item(self.bank_name)
+        
+        self.sender_name = ui.TextInput(
+            label='Atas Nama Pengirim',
+            placeholder='Nama pemilik rekening/akun',
+            style=discord.TextStyle.short,
+            required=True
+        )
+        self.add_item(self.sender_name)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        embed = discord.Embed(
+            title=f"{Emojis.MONEY_BAG} KONFIRMASI PEMBAYARAN",
+            description="Data pembayaran telah dicatat.\n\n👉 **LANGKAH SELANJUTNYA:**\nSilakan **Kirim Gambar/Screenshot Bukti Transfer** di channel ini sekarang.",
+            color=self.config.COLOR_INFO
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
 class PaymentFormView(ui.View):
     """View untuk tombol bayar sekarang (Instant Payment)"""
     def __init__(self, bot, slots):
