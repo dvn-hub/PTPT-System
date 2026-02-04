@@ -179,70 +179,67 @@ class CreatePatunganForm(ui.Modal, title='➕ Buat Patungan Baru'):
 
 class DaftarSlotModal(ui.Modal, title='📝 Daftar Slot'):
     """Form untuk user mendaftar slot"""
-    def __init__(self, bot, product_name):
-        super().__init__(timeout=300)
+    def __init__(self, bot, product_name, count):
+        super().__init__(timeout=300, title=f"Daftar {count} Slot - {product_name}")
         self.bot = bot
         self.config = Config()
         self.product_name = product_name
+        self.count = count
+        self.items_dict = {}
         
-        # Jumlah Slot
-        self.slot_count = ui.TextInput(
-            label='Jumlah Slot',
-            placeholder='1',
-            style=discord.TextStyle.short,
-            required=True,
-            max_length=2,
-            default='1'
-        )
-        self.add_item(self.slot_count)
-        
-        # Username Roblox
-        self.roblox_user = ui.TextInput(
-            label='Username Roblox (@user1, @user2)',
-            placeholder='@user1 atau @user1, @user2',
-            style=discord.TextStyle.short,
-            required=True
-        )
-        self.add_item(self.roblox_user)
-        
-        # Display Name
-        self.display_name = ui.TextInput(
-            label='Display Name (nick1, nick2)',
-            placeholder='Nickname atau nick1, nick2',
-            style=discord.TextStyle.short,
-            required=True
-        )
-        self.add_item(self.display_name)
+        if count == 1:
+            # Jika 1 slot, minta detail terpisah (2 kolom)
+            self.roblox_user = ui.TextInput(
+                label='Username Roblox',
+                placeholder='@username',
+                style=discord.TextStyle.short,
+                required=True
+            )
+            self.display_name = ui.TextInput(
+                label='Display Name',
+                placeholder='Nickname in-game',
+                style=discord.TextStyle.short,
+                required=True
+            )
+            self.add_item(self.roblox_user)
+            self.add_item(self.display_name)
+        else:
+            # Jika > 1 slot, buat input per slot (max 5 slot per modal)
+            # Format: Username, DisplayName
+            for i in range(1, count + 1):
+                field = ui.TextInput(
+                    label=f'Slot {i} Data',
+                    placeholder='Username, DisplayName',
+                    style=discord.TextStyle.short,
+                    required=True
+                )
+                self.add_item(field)
+                self.items_dict[i] = field
     
     async def on_submit(self, interaction: discord.Interaction):
         try:
             product_name = self.product_name
+            count = self.count
             
-            # Validate slot count
-            if not self.slot_count.value.isdigit():
-                await interaction.response.send_message(f"{Emojis.WARNING} Jumlah slot harus angka!", ephemeral=True)
-                return
+            # Parse Data
+            slots_data = []
             
-            count = int(self.slot_count.value)
-            if count < 1:
-                await interaction.response.send_message(f"{Emojis.WARNING} Minimal 1 slot!", ephemeral=True)
-                return
-
-            # Parse usernames (comma separated)
-            raw_roblox = self.roblox_user.value.strip()
-            roblox_users = [u.strip() for u in raw_roblox.split(',')]
-            
-            # Parse display names (comma separated)
-            raw_display = self.display_name.value.strip()
-            display_names = [d.strip() for d in raw_display.split(',')]
-            
-            # Validate count match if multiple provided
-            if len(roblox_users) > 1 and len(roblox_users) != count:
-                await interaction.response.send_message(
-                    f"{Emojis.WARNING} Jumlah username ({len(roblox_users)}) tidak sesuai dengan jumlah slot ({count})!", 
-                    ephemeral=True
-                )
-                return
+            if count == 1:
+                slots_data.append({
+                    'username': self.roblox_user.value.strip(),
+                    'display': self.display_name.value.strip()
+                })
+            else:
+                for i, field in self.items_dict.items():
+                    val = field.value.strip()
+                    if ',' in val:
+                        parts = val.split(',', 1)
+                        u = parts[0].strip()
+                        d = parts[1].strip()
+                    else:
+                        u = val
+                        d = val # Default display = username if not provided
+                    slots_data.append({'username': u, 'display': d})
             
             # Get patungan info (New Model)
             from database.models import Patungan, UserSlot
@@ -287,20 +284,10 @@ class DaftarSlotModal(ui.Modal, title='📝 Daftar Slot'):
             
             for i in range(count):
                 slot_number = current_slots + 1 + i
+                data = slots_data[i]
                 
-                # Determine username for this slot
-                if len(roblox_users) == 1:
-                    u_name = roblox_users[0]
-                else:
-                    u_name = roblox_users[i]
-                
-                # Determine display name
-                if len(display_names) == 1:
-                    d_name = display_names[0]
-                elif len(display_names) == len(roblox_users):
-                    d_name = display_names[i]
-                else:
-                    d_name = u_name # Fallback
+                u_name = data['username']
+                d_name = data['display']
                 
                 success, slot = await create_user_slot(
                     session=self.bot.session,
@@ -334,7 +321,7 @@ class DaftarSlotModal(ui.Modal, title='📝 Daftar Slot'):
                 embed.add_field(name='Harga/Slot', value=price_display, inline=True)
                 
                 # Show usernames
-                users_str = ", ".join(roblox_users) if len(roblox_users) > 1 else roblox_users[0]
+                users_str = ", ".join([d['username'] for d in slots_data])
                 embed.add_field(name='Roblox User', value=users_str, inline=False)
                 
                 # Check for instant payment slots (11-19)

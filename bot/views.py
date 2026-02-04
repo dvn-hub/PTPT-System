@@ -1,7 +1,7 @@
 # bot/views.py
 import discord
 from discord import ui
-from bot.forms import CreatePatunganForm, DaftarSlotModal, SetPaymentImageForm
+from bot.forms import CreatePatunganForm, DaftarSlotModal, SetPaymentImageForm, PaymentForm
 from database.crud import get_user_slots, update_payment_status, get_slot, get_available_patungans, get_all_patungans
 from config import Config, Emojis
 from datetime import datetime
@@ -57,8 +57,20 @@ class MainTicketView(ui.View):
                 )
                 return
 
-            form = DaftarSlotModal(self.bot, patungan.product_name)
-            await interaction.response.send_modal(form)
+            # Calculate available slots
+            from database.models import UserSlot
+            from sqlalchemy import select, func
+            stmt_count = select(func.count(UserSlot.id)).where(
+                UserSlot.patungan_version == patungan.product_name,
+                UserSlot.slot_status.in_(['booked', 'waiting_payment', 'paid'])
+            )
+            res_count = await self.bot.session.execute(stmt_count)
+            current_slots = res_count.scalar() or 0
+            remaining = patungan.total_slots - current_slots
+            
+            # Show Select View instead of Modal directly
+            view = SelectSlotCountView(self.bot, patungan.product_name, remaining)
+            await interaction.response.send_message("Mau daftar berapa slot?", view=view, ephemeral=True)
             
         except Exception as e:
             logger.error(f"Error showing daftar slot modal: {e}")
@@ -89,6 +101,39 @@ class MainTicketView(ui.View):
     async def close_ticket(self, interaction: discord.Interaction, button: ui.Button):
         """Handle close ticket button"""
         await self.bot.ticket_handler.handle_admin_close_ticket(interaction)
+
+class SelectSlotCountView(ui.View):
+    """View to select number of slots before registration"""
+    def __init__(self, bot, product_name, max_slots):
+        super().__init__(timeout=60)
+        self.bot = bot
+        self.product_name = product_name
+        
+        # Limit to 5 because Modal max components = 5
+        limit = min(max_slots, 5)
+        
+        options = []
+        if limit < 1:
+            options.append(discord.SelectOption(label="Full", value="0", description="Slot Penuh"))
+        else:
+            for i in range(1, limit + 1):
+                options.append(discord.SelectOption(
+                    label=f"{i} Slot",
+                    value=str(i),
+                    description=f"Daftar {i} slot sekaligus"
+                ))
+            
+        select = ui.Select(placeholder="Pilih Jumlah Slot...", options=options, disabled=(limit < 1))
+        select.callback = self.callback
+        self.add_item(select)
+        
+    async def callback(self, interaction: discord.Interaction):
+        count = int(interaction.data['values'][0])
+        if count > 0:
+            modal = DaftarSlotModal(self.bot, self.product_name, count)
+            await interaction.response.send_modal(modal)
+        else:
+            await interaction.response.send_message("Slot penuh!", ephemeral=True)
 
 class PaymentMethodView(ui.View):
     """View to select payment method"""
