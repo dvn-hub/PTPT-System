@@ -1439,7 +1439,10 @@ class PatunganManager:
             if embed.description:
                 slot_lines = embed.description.split('\n')
                 for line in slot_lines:
-                    slot_match = re.search(r'`(\d+)\.`\s*(.+?)\s*-\s*\|\|\s*<@(\d+)>\s*\|\|\s*\((.+?)\)', line)
+                    # Regex Flexible: Support format lama (tanpa spoiler/backtick) dan baru
+                    # Format: 1. Username - <@ID> (Status) atau `1.` User - || <@ID> || (Status)
+                    # Menangani kurung () atau [] untuk status
+                    slot_match = re.search(r'(?:`?)(\d+)(?:`?)\.\s*(.+?)\s*-\s*(?:\|\|\s*)?<@(\d+)>(?:\s*\|\|)?\s*[\\([\]\)]', line)
                     if slot_match:
                         s_num = int(slot_match.group(1))
                         s_game_user = slot_match.group(2).strip()
