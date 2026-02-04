@@ -133,6 +133,32 @@ class AdminHandler:
             count, msg = await self.bot.patungan_manager.sync_legacy_patungan(self.config.LIST_PTPT_CHANNEL_ID)
             await interaction.followup.send(f"✅ {msg}")
 
+        @self.bot.tree.command(name="import_specific", description="Import patungan spesifik by Message ID")
+        async def import_specific(interaction: discord.Interaction, message_id: str):
+            # Permission check
+            user_roles = [r.id for r in interaction.user.roles]
+            allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS
+            if not any(role_id in user_roles for role_id in allowed_roles):
+                await interaction.response.send_message("❌ Access Denied", ephemeral=True)
+                return
+            
+            await interaction.response.defer(ephemeral=True)
+            try:
+                channel = self.bot.get_channel(self.config.LIST_PTPT_CHANNEL_ID)
+                if not channel:
+                    await interaction.followup.send("❌ Channel List PTPT tidak ditemukan.", ephemeral=True)
+                    return
+
+                msg = await channel.fetch_message(int(message_id))
+                success = await self.bot.patungan_manager.import_patungan_from_message(msg)
+                
+                if success:
+                    await interaction.followup.send(f"✅ Berhasil import patungan dari pesan {message_id}", ephemeral=True)
+                else:
+                    await interaction.followup.send(f"❌ Gagal import (Mungkin format salah atau sudah ada).", ephemeral=True)
+            except Exception as e:
+                await interaction.followup.send(f"❌ Error: {str(e)}", ephemeral=True)
+
     async def approve_payment(self, interaction: discord.Interaction, product_name: str, user: discord.Member, slots_count: int = 1):
         """
         Handle logic saat payment diapprove:

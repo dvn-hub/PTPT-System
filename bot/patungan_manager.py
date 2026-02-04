@@ -1551,11 +1551,36 @@ class PatunganManager:
                         if 'paid' in s_status_raw: s_status = 'paid'
                         elif 'waiting' in s_status_raw: s_status = 'waiting_payment'
                         
-                        # Create Dummy Ticket & Slot logic omitted for brevity in auto-import 
-                        # (Assuming legacy sync handles full detail, here we just need Patungan to exist for .run)
-                        # But to be safe, we skip slot creation here to avoid complexity, 
-                        # or rely on sync_legacy_patungan for full restore.
-                        # For .run command, we mainly need the Patungan record.
+                        # Find/Create Dummy Ticket for this user (Legacy)
+                        stmt_t = select(UserTicket).where(
+                            UserTicket.discord_user_id == s_discord_id,
+                            UserTicket.ticket_channel_id == f"legacy-{s_discord_id}"
+                        )
+                        res_t = await self.bot.session.execute(stmt_t)
+                        ticket = res_t.scalar_one_or_none()
+                        
+                        if not ticket:
+                            ticket = UserTicket(
+                                discord_user_id=s_discord_id,
+                                discord_username="Legacy User",
+                                ticket_channel_id=f"legacy-{s_discord_id}",
+                                ticket_status='closed',
+                                close_reason='Legacy Import'
+                            )
+                            self.bot.session.add(ticket)
+                            await self.bot.session.flush()
+                        
+                        # Create Slot
+                        new_slot = UserSlot(
+                            ticket_id=ticket.id,
+                            patungan_version=product_name,
+                            slot_number=s_num,
+                            game_username=s_game_user,
+                            display_name=s_game_user,
+                            slot_status=s_status,
+                            locked_price=price
+                        )
+                        self.bot.session.add(new_slot)
             
             await self.bot.session.commit()
             logger.info(f"Auto-imported legacy patungan: {product_name}")
