@@ -9,7 +9,7 @@ class WinterAPI:
         print("🔄 Sedang mencoba login ke Wintercode...")
         try:
             payload = {"username": Config.WC_USERNAME, "password": Config.WC_PASSWORD}
-            r = requests.post(Config.LOGIN_URL, json=payload, timeout=10)
+            r = requests.post(Config.LOGIN_URL, json=payload, timeout=30)
             if r.status_code == 200:
                 data = r.json()
                 self.token = data.get('token')
@@ -51,14 +51,14 @@ class WinterAPI:
             
             try:
                 # print(f"   -> Request Batch {i//batch_size + 1}/{total_batches}...")
-                r = requests.post(Config.API_URL, json=payload, headers=headers, timeout=10)
+                r = requests.post(Config.API_URL, json=payload, headers=headers, timeout=30)
                 
                 # Handle 401 (Expired)
                 if r.status_code == 401:
                     print("⚠️ Token Expired. Login ulang...")
                     if self.login():
                         headers["Authorization"] = f"Bearer {self.token}"
-                        r = requests.post(Config.API_URL, json=payload, headers=headers, timeout=10)
+                        r = requests.post(Config.API_URL, json=payload, headers=headers, timeout=30)
 
                 if r.status_code == 200:
                     data = r.json().get('data', {})
