@@ -225,42 +225,48 @@ class PatunganBot(commands.Bot):
                 if not any(role_id in user_roles for role_id in allowed_roles):
                     return # Silently ignore if not admin
             
-            # Check if it's a reply
-            if not message.reference or not message.reference.message_id:
-                return # Silently ignore if not a reply
-
             try:
                 # Delete the command message to keep channel clean
                 await message.delete()
 
-                replied_message = await message.channel.fetch_message(message.reference.message_id)
-                if not replied_message.author == self.user or not replied_message.embeds:
-                    return # Not a reply to a valid bot embed
-
-                embed_title = replied_message.embeds[0].title
-                # Title format: "🔥 **V1 - 24 Jam**"
-                product_name_match = re.search(r'\*\*(.*?)\s*-', embed_title)
-                if not product_name_match:
-                    return # Embed title format not recognized
-                
-                product_name = product_name_match.group(1).strip()
-
-                # Parse slot number
                 parts = message.content.split()
-                if len(parts) != 2 or not parts[1].isdigit():
-                    await message.channel.send(f"{message.author.mention} ❌ Format salah. Gunakan: `.cancel <nomor_slot>`", delete_after=10)
-                    return
-                
-                slot_number = int(parts[1])
+                product_name = None
+                slot_number = None
 
-                # Call handler
-                success, msg = await self.admin_handler.cancel_slot_by_number(product_name, slot_number, message.author)
-                
-                # Send result
-                await message.channel.send(f"{message.author.mention} {msg}", delete_after=20)
+                # Case 1: Explicit .cancel V1 5
+                if len(parts) == 3:
+                    product_name = parts[1].upper()
+                    if not parts[2].isdigit():
+                         await message.channel.send(f"{message.author.mention} ❌ Slot harus angka.", delete_after=5)
+                         return
+                    slot_number = int(parts[2])
 
-            except discord.NotFound:
-                return # Replied message was deleted
+                # Case 2: Reply .cancel 5
+                elif len(parts) == 2 and message.reference and message.reference.message_id:
+                    if not parts[1].isdigit():
+                         await message.channel.send(f"{message.author.mention} ❌ Slot harus angka.", delete_after=5)
+                         return
+                    slot_number = int(parts[1])
+                    
+                    # Fetch replied message to get product name
+                    try:
+                        replied_message = await message.channel.fetch_message(message.reference.message_id)
+                        if replied_message.author == self.user and replied_message.embeds:
+                            embed_title = replied_message.embeds[0].title
+                            # Title format: "🔥 **V1 - 24 Jam**"
+                            match = re.search(r'\*\*(.*?)\s*-', embed_title)
+                            if match:
+                                product_name = match.group(1).strip()
+                    except:
+                        pass
+                
+                if product_name and slot_number:
+                     # Call handler
+                    success, msg = await self.admin_handler.cancel_slot_by_number(product_name, slot_number, message.author)
+                    await message.channel.send(f"{message.author.mention} {msg}", delete_after=20)
+                else:
+                    await message.channel.send(f"{message.author.mention} ❌ Format salah. Gunakan: `.cancel <NamaProduk> <NomorSlot>` atau Reply pesan dengan `.cancel <NomorSlot>`", delete_after=10)
+
             except Exception as e:
                 logger.error(f"Error handling .cancel command: {e}")
                 await message.channel.send(f"{message.author.mention} ❌ Terjadi kesalahan.", delete_after=10)
