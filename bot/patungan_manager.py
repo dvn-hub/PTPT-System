@@ -1587,14 +1587,18 @@ class PatunganManager:
 
             # Regex logic (same as sync_legacy)
             match = re.search(r'\*\*(.+?)\s*-\s*(\d+)\s*Jam\*\*', title)
-            if not match:
-                match = re.search(r'\*\*(.+?)\*\*', title)
-                if not match: return False
-                product_name = match.group(1).strip()
-                duration = 24
-            else:
+            if match:
                 product_name = match.group(1).strip()
                 duration = int(match.group(2))
+            else:
+                match = re.search(r'\*\*(.+?)\*\*', title)
+                if match:
+                    product_name = match.group(1).strip()
+                    duration = 24
+                else:
+                    # Fallback 3: Plain text (Hapus emoji/simbol)
+                    product_name = title.split('-')[0].strip().replace('*', '')
+                    duration = 24
 
             # Check if exists
             from database.crud import get_patungan
