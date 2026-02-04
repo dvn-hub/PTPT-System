@@ -1439,19 +1439,21 @@ class PatunganManager:
             if embed.description:
                 slot_lines = embed.description.split('\n')
                 for line in slot_lines:
-                    # Regex Flexible: Support format lama (tanpa spoiler/backtick) dan baru
-                    # Format: 1. Username - <@ID> (Status) atau `1.` User - || <@ID> || (Status)
-                    # Menangani kurung () atau [] untuk status
-                    slot_match = re.search(r'(?:`?)(\d+)(?:`?)\.\s*(.+?)\s*-\s*(?:\|\|\s*)?<@(\d+)>(?:\s*\|\|)?\s*[\\([\]\)]', line)
+                    # Regex Flexible: Support format lama (tanpa spoiler/backtick)
+                    # Format: 1. Username - <@ID> ...
+                    # Tidak mewajibkan kurung status di akhir regex agar lebih aman
+                    slot_match = re.search(r'(?:`?)(\d+)(?:`?)\.\s*(.+?)\s*-\s*(?:\|\|\s*)?<@(\d+)>', line)
                     if slot_match:
                         s_num = int(slot_match.group(1))
                         s_game_user = slot_match.group(2).strip()
                         s_discord_id = slot_match.group(3)
-                        s_status_raw = slot_match.group(4).lower()
+                        
+                        # Detect status from the whole line
+                        line_lower = line.lower()
                         
                         s_status = 'booked'
-                        if 'paid' in s_status_raw: s_status = 'paid'
-                        elif 'waiting' in s_status_raw: s_status = 'waiting_payment'
+                        if 'paid' in line_lower: s_status = 'paid'
+                        elif 'waiting' in line_lower: s_status = 'waiting_payment'
                         
                         # Cek apakah slot ini sudah ada di DB
                         stmt_slot = select(UserSlot).where(

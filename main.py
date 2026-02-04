@@ -321,6 +321,41 @@ class PatunganBot(commands.Bot):
                     else:
                         pass
 
+        # Manual Command: .import <message_id> (Admin Only)
+        if message.content.lower().startswith('.import'):
+            if isinstance(message.author, discord.Member):
+                user_roles = [r.id for r in message.author.roles]
+                allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS
+                
+                if any(role_id in user_roles for role_id in allowed_roles):
+                    parts = message.content.split()
+                    msg_id = None
+                    
+                    if len(parts) >= 2:
+                        msg_id = parts[1].strip()
+                    elif message.reference:
+                        msg_id = str(message.reference.message_id)
+                    
+                    if msg_id:
+                        try:
+                            channel = self.get_channel(self.config.LIST_PTPT_CHANNEL_ID)
+                            if channel:
+                                try:
+                                    target_msg = await channel.fetch_message(int(msg_id))
+                                    success = await self.patungan_manager.import_patungan_from_message(target_msg)
+                                    if success:
+                                        await message.channel.send(f"✅ Berhasil import patungan dari pesan {msg_id}")
+                                    else:
+                                        await message.channel.send(f"❌ Gagal import. Format tidak dikenali atau sudah ada.")
+                                except discord.NotFound:
+                                    await message.channel.send(f"❌ Pesan {msg_id} tidak ditemukan di channel List PTPT.")
+                            else:
+                                await message.channel.send("❌ Channel List PTPT tidak ditemukan.")
+                        except Exception as e:
+                            await message.channel.send(f"❌ Error: {e}")
+                    else:
+                        await message.channel.send("❌ Format: `.import <message_id>` atau Reply pesan.")
+
         # Manual Command: .cancel <slot_number> (in list-ptpt, as reply)
         if message.content.lower().startswith('.cancel'):
             # Only trigger in list-ptpt channel
