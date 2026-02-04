@@ -676,6 +676,7 @@ class PatunganManager:
                 return False, "Patungan tidak ditemukan"
             
             patungan.start_schedule = schedule_time
+            patungan.start_mode = 'schedule'
             
             await self.bot.session.commit()
             
@@ -695,6 +696,9 @@ class PatunganManager:
                 action=f'Schedule set for {version}',
                 details=f'Schedule: {schedule_time.strftime("%d/%m %H:%M")}'
             )
+            
+            # Update list channel to reflect changes (Full Slot -> Date)
+            await self.update_list_channel()
             
             return True, "Jadwal berhasil ditetapkan"
             

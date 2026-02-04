@@ -19,6 +19,7 @@ from api import WinterAPI, process_data
 import ui
 from database.models import Patungan
 from sqlalchemy import select
+from datetime import datetime
 
 # Setup logging
 logger = setup_logging()
@@ -321,6 +322,60 @@ class PatunganBot(commands.Bot):
                     else:
                         pass
 
+        # Manual Command: .open (Set status to open)
+        if message.content.lower().startswith('.open'):
+            if isinstance(message.author, discord.Member):
+                user_roles = [r.id for r in message.author.roles]
+                allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS
+                
+                if any(role_id in user_roles for role_id in allowed_roles):
+                    parts = message.content.split()
+                    version = None
+                    replied_msg = None
+                    
+                    if len(parts) >= 2:
+                        version = parts[1].upper().strip()
+                    elif message.reference and message.channel.id == self.config.LIST_PTPT_CHANNEL_ID:
+                        try:
+                            replied_msg = await message.channel.fetch_message(message.reference.message_id)
+                            if replied_msg.author == self.user and replied_msg.embeds:
+                                embed = replied_msg.embeds[0]
+                                # 1. Try ID from Footer (Most Accurate)
+                                if embed.footer and embed.footer.text:
+                                    id_match = re.search(r'ID:\s*(\d+)', embed.footer.text)
+                                    if id_match:
+                                        p_id = int(id_match.group(1))
+                                        stmt = select(Patungan.product_name).where(Patungan.id == p_id)
+                                        res = await self.session.execute(stmt)
+                                        version = res.scalar()
+                                
+                                # 2. Fallback to Title Regex
+                                if not version and embed.title:
+                                    match = re.search(r'\*\*(.*?)(?:\s*-|\*\*)', embed.title)
+                                    if match:
+                                        version = match.group(1).strip()
+                        except:
+                            pass
+
+                    if version:
+                        success, msg = await self.patungan_manager.set_patungan_status(version, 'open', message.author.name)
+                        
+                        # AUTO-IMPORT FALLBACK
+                        if not success and "tidak ditemukan" in msg and replied_msg:
+                            logger.info(f"Attempting auto-import for {version}...")
+                            import_success = await self.patungan_manager.import_patungan_from_message(replied_msg)
+                            if import_success:
+                                # Retry setting status
+                                success, msg = await self.patungan_manager.set_patungan_status(version, 'open', message.author.name)
+
+                        await message.channel.send(f"{message.author.mention} {msg}", delete_after=10)
+                        try: await message.delete()
+                        except: pass
+                    elif message.channel.id == self.config.LIST_PTPT_CHANNEL_ID:
+                        await message.channel.send(f"{message.author.mention} ❌ Format: `.open <Versi>` atau Reply pesan di List PTPT.", delete_after=5)
+                    else:
+                        pass
+
         # Manual Command: .import <message_id> (Admin Only)
         if message.content.lower().startswith('.import'):
             if isinstance(message.author, discord.Member):
@@ -355,6 +410,76 @@ class PatunganBot(commands.Bot):
                             await message.channel.send(f"❌ Error: {e}")
                     else:
                         await message.channel.send("❌ Format: `.import <message_id>` atau Reply pesan.")
+
+        # Manual Command: .jadwal <version> <date> <time>
+        if message.content.lower().startswith('.jadwal'):
+            if isinstance(message.author, discord.Member):
+                user_roles = [r.id for r in message.author.roles]
+                allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS
+                
+                if any(role_id in user_roles for role_id in allowed_roles):
+                    parts = message.content.split()
+                    args = parts[1:] # Skip command
+                    
+                    version = None
+                    
+                    # 1. Try detect version from Reply
+                    if message.reference and message.channel.id == self.config.LIST_PTPT_CHANNEL_ID:
+                        try:
+                            replied_msg = await message.channel.fetch_message(message.reference.message_id)
+                            if replied_msg.author == self.user and replied_msg.embeds:
+                                embed = replied_msg.embeds[0]
+                                if embed.footer and embed.footer.text:
+                                    id_match = re.search(r'ID:\s*(\d+)', embed.footer.text)
+                                    if id_match:
+                                        p_id = int(id_match.group(1))
+                                        stmt = select(Patungan.product_name).where(Patungan.id == p_id)
+                                        res = await self.session.execute(stmt)
+                                        version = res.scalar()
+                                if not version and embed.title:
+                                    match = re.search(r'\*\*(.*?)(?:\s*-|\*\*)', embed.title)
+                                    if match:
+                                        version = match.group(1).strip()
+                        except:
+                            pass
+                    
+                    # 2. Parse Arguments
+                    if not args:
+                         await message.channel.send(f"{message.author.mention} ❌ Format: `.jadwal <Versi> <YYYY-MM-DD> <HH:MM>` atau Reply embed.")
+                         return
+
+                    # Check if first arg is version (not starting with digit)
+                    if not args[0][0].isdigit():
+                        if not version:
+                            version = args[0].upper().strip()
+                        args = args[1:] # Consume version arg
+                    
+                    if len(args) < 2:
+                        await message.channel.send(f"{message.author.mention} ❌ Format Waktu Salah. Gunakan: `YYYY-MM-DD HH:MM`")
+                        return
+                        
+                    datetime_str = f"{args[0]} {args[1]}"
+                    schedule_dt = None
+                    formats = ["%Y-%m-%d %H:%M", "%d-%m-%Y %H:%M", "%d/%m/%Y %H:%M", "%d-%m %H:%M", "%d/%m %H:%M"]
+                    
+                    for fmt in formats:
+                        try:
+                            dt = datetime.strptime(datetime_str, fmt)
+                            # Handle formats without year (default to current year)
+                            if dt.year == 1900:
+                                dt = dt.replace(year=datetime.now().year)
+                            schedule_dt = dt
+                            break
+                        except ValueError:
+                            continue
+                    
+                    if not version:
+                        await message.channel.send(f"{message.author.mention} ❌ Versi patungan tidak ditemukan/ditentukan.")
+                    elif not schedule_dt:
+                        await message.channel.send(f"{message.author.mention} ❌ Format tanggal tidak dikenali. Coba `YYYY-MM-DD HH:MM`.")
+                    else:
+                        success, msg = await self.patungan_manager.set_schedule(version, schedule_dt, message.author.name)
+                        await message.channel.send(f"{message.author.mention} {msg}")
 
         # Manual Command: .cancel <slot_number> (in list-ptpt, as reply)
         if message.content.lower().startswith('.cancel'):
