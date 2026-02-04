@@ -123,12 +123,10 @@ class AdminHandler:
     async def approve_payment(self, interaction: discord.Interaction, product_name: str, user: discord.Member, slots_count: int = 1):
         """
         Handle logic saat payment diapprove:
-        1. Buat/Cek Group Channel (Shared)
-        2. Add User ke Group Channel
+        1. Assign Role ke User
+        2. Add User ke Channel (via Role/Overwrite)
         
-        UPDATED FLOW:
-        Channel & Role created at product creation.
-        Here we just assign role and add user to channel via Manager.
+        Note: Channel & Role harus sudah dibuat saat Create Patungan.
         """
         try:
             # Call manager to grant access (Role + Channel)
@@ -138,19 +136,7 @@ class AdminHandler:
                 print(f"[SUCCESS] User {user.display_name} access granted to {channel.name}")
                 return channel
             else:
-                print(f"[WARNING] Failed to grant access or channel not found for {product_name}")
-                # Fallback: Try to initialize if missing (Lazy Init)
-                from database.crud import get_patungan
-                patungan = await get_patungan(self.bot.session, product_name)
-                
-                if patungan and (not patungan.discord_channel_id or not patungan.discord_role_id):
-                    print(f"[INFO] Initializing patungan system for {product_name} (Lazy Init)")
-                    success = await self.bot.patungan_manager.initialize_patungan(product_name)
-                    if success:
-                        # Retry grant
-                        channel = await self.bot.patungan_manager.grant_patungan_access(str(user.id), product_name, slots_count)
-                        return channel
-                
+                print(f"[WARNING] Failed to grant access for {product_name}. Check if Role/Channel exists.")
                 return None
 
         except Exception as e:

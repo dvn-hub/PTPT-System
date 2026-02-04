@@ -17,6 +17,8 @@ import logging
 from database.crud import get_ticket_by_channel
 from api import WinterAPI, process_data
 import ui
+from database.models import Patungan
+from sqlalchemy import select
 
 # Setup logging
 logger = setup_logging()
@@ -218,15 +220,26 @@ class PatunganBot(commands.Bot):
                     version = None
                     
                     if len(parts) >= 2:
-                        version = parts[1].upper()
+                        version = parts[1].upper().strip()
                     elif message.reference and message.channel.id == self.config.LIST_PTPT_CHANNEL_ID:
                         try:
                             replied_msg = await message.channel.fetch_message(message.reference.message_id)
                             if replied_msg.author == self.user and replied_msg.embeds:
-                                title = replied_msg.embeds[0].title
-                                match = re.search(r'\*\*(.*?)\s*-', title)
-                                if match:
-                                    version = match.group(1).strip()
+                                embed = replied_msg.embeds[0]
+                                # 1. Try ID from Footer (Most Accurate)
+                                if embed.footer and embed.footer.text:
+                                    id_match = re.search(r'ID:\s*(\d+)', embed.footer.text)
+                                    if id_match:
+                                        p_id = int(id_match.group(1))
+                                        stmt = select(Patungan.product_name).where(Patungan.id == p_id)
+                                        res = await self.session.execute(stmt)
+                                        version = res.scalar()
+                                
+                                # 2. Fallback to Title Regex
+                                if not version and embed.title:
+                                    match = re.search(r'\*\*(.*?)(?:\s*-|\*\*)', embed.title)
+                                    if match:
+                                        version = match.group(1).strip()
                         except:
                             pass
 
@@ -255,15 +268,26 @@ class PatunganBot(commands.Bot):
                     version = None
 
                     if len(parts) >= 2:
-                        version = parts[1].upper()
+                        version = parts[1].upper().strip()
                     elif message.reference and message.channel.id == self.config.LIST_PTPT_CHANNEL_ID:
                         try:
                             replied_msg = await message.channel.fetch_message(message.reference.message_id)
                             if replied_msg.author == self.user and replied_msg.embeds:
-                                title = replied_msg.embeds[0].title
-                                match = re.search(r'\*\*(.*?)\s*-', title)
-                                if match:
-                                    version = match.group(1).strip()
+                                embed = replied_msg.embeds[0]
+                                # 1. Try ID from Footer (Most Accurate)
+                                if embed.footer and embed.footer.text:
+                                    id_match = re.search(r'ID:\s*(\d+)', embed.footer.text)
+                                    if id_match:
+                                        p_id = int(id_match.group(1))
+                                        stmt = select(Patungan.product_name).where(Patungan.id == p_id)
+                                        res = await self.session.execute(stmt)
+                                        version = res.scalar()
+                                
+                                # 2. Fallback to Title Regex
+                                if not version and embed.title:
+                                    match = re.search(r'\*\*(.*?)(?:\s*-|\*\*)', embed.title)
+                                    if match:
+                                        version = match.group(1).strip()
                         except:
                             pass
 

@@ -163,7 +163,8 @@ class CreatePatunganForm(ui.Modal, title='➕ Buat Patungan Baru'):
                     start_display = f"{Emojis.LOADING_CIRCLE} Full Slot"
                 embed.add_field(name=f"{Emojis.ROCKET} **Start:**", value=start_display, inline=True)
                 
-                await announcement_channel.send(embed=embed)
+                content = f"<@&{self.config.PTPT_HUNTER_ROLE_ID}>"
+                await announcement_channel.send(content=content, embed=embed)
             
             # 2. Update List
             await self.bot.patungan_manager.update_list_channel()

@@ -83,6 +83,108 @@ class StockTicketControlView(discord.ui.View):
     async def close(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.bot.ticket_handler.handle_admin_close_ticket(interaction)
 
+async def create_stock_ticket(bot, interaction: discord.Interaction, category: str, sub_category: str, quantity: str, username: str):
+    guild = interaction.guild
+    user = interaction.user
+    safe_username = "".join(c for c in user.name if c.isalnum() or c in "-_").lower()
+    
+    # Category name for channel
+    cat_name = category.lower().replace(" ", "-")
+    channel_name = f"ticket-{cat_name}-{safe_username}"
+    
+    existing_channel = discord.utils.get(guild.text_channels, name=channel_name)
+    if existing_channel:
+        await interaction.response.send_message(f"⚠️ Kamu sudah memiliki tiket terbuka untuk kategori ini: {existing_channel.mention}", ephemeral=True)
+        return
+
+    overwrites = {
+        guild.default_role: discord.PermissionOverwrite(read_messages=False),
+        user: discord.PermissionOverwrite(read_messages=True, send_messages=True, attach_files=True),
+        guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)
+    }
+    
+    # Add Admin Roles
+    for role_id in [config.Config.SERVER_OVERLORD_ROLE_ID, config.Config.SERVER_WARDEN_ROLE_ID] + config.Config.ADMIN_ROLE_IDS:
+        role = guild.get_role(role_id)
+        if role:
+            overwrites[role] = discord.PermissionOverwrite(read_messages=True, send_messages=True, attach_files=True)
+
+    try:
+        target_category = None
+        if config.Config.STOCK_CATEGORY_ID:
+            target_category = guild.get_channel(config.Config.STOCK_CATEGORY_ID)
+
+        channel = await guild.create_text_channel(name=channel_name, overwrites=overwrites, category=target_category)
+        
+        # REGISTER TICKET TO DATABASE
+        await create_user_ticket(
+            session=bot.session,
+            discord_user_id=str(user.id),
+            discord_username=user.name,
+            ticket_channel_id=str(channel.id)
+        )
+
+        # Embed Report
+        item_name = sub_category if sub_category else category
+        qty_suffix = "M" if category == "COIN" else " Pcs"
+        
+        embed_ticket = discord.Embed(
+            title=f"🧾 ORDER DETAILS: {item_name}",
+            color=0x010101,
+            timestamp=datetime.datetime.now()
+        )
+        embed_ticket.add_field(name="👤 Buyer", value=user.mention, inline=True)
+        embed_ticket.add_field(name="📦 Item", value=item_name, inline=True)
+        embed_ticket.add_field(name="🔢 Quantity", value=f"{quantity}{qty_suffix}", inline=True)
+        embed_ticket.add_field(name="🎮 Roblox User", value=username, inline=True)
+        embed_ticket.set_footer(text="Silakan lakukan pembayaran dan kirim bukti transfer di sini.")
+        
+        # Pings
+        mentions = [user.mention]
+        for role_id in [config.Config.SERVER_OVERLORD_ROLE_ID, config.Config.SERVER_WARDEN_ROLE_ID]:
+            role = guild.get_role(role_id)
+            if role: mentions.append(role.mention)
+        
+        view = StockTicketControlView(bot)
+        await channel.send(content=" ".join(mentions), embed=embed_ticket, view=view)
+        await interaction.response.send_message(f"✅ Tiket berhasil dibuat: {channel.mention}", ephemeral=True)
+    except Exception as e:
+        await interaction.response.send_message(f"❌ Gagal membuat tiket: {e}", ephemeral=True)
+
+class StockOrderModal(discord.ui.Modal):
+    def __init__(self, bot, category, sub_category=None):
+        title = f"Order {sub_category if sub_category else category}"
+        if len(title) > 45: title = title[:45]
+        super().__init__(title=title)
+        self.bot = bot
+        self.category = category
+        self.sub_category = sub_category
+
+        label_qty = "Jumlah (M)" if category == "COIN" else "Jumlah (Pcs)"
+        placeholder_qty = "100 (Artinya 100M)" if category == "COIN" else "100"
+        
+        self.quantity = discord.ui.TextInput(label=label_qty, placeholder=placeholder_qty, required=True, max_length=20)
+        self.add_item(self.quantity)
+
+        self.username = discord.ui.TextInput(label="Username Roblox", placeholder="@username", required=True, max_length=50)
+        self.add_item(self.username)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await create_stock_ticket(self.bot, interaction, self.category, self.sub_category, self.quantity.value, self.username.value)
+
+class StoneTypeView(discord.ui.View):
+    def __init__(self, bot):
+        super().__init__(timeout=60)
+        self.bot = bot
+
+    @discord.ui.select(placeholder="Pilih Tipe Stone...", options=[
+        discord.SelectOption(label="Enchant Stone", value="Enchant Stone"),
+        discord.SelectOption(label="Evolved Enchant Stone", value="Evolved Enchant Stone")
+    ])
+    async def select_stone(self, interaction: discord.Interaction, select: discord.ui.Select):
+        modal = StockOrderModal(self.bot, "STONE", select.values[0])
+        await interaction.response.send_modal(modal)
+
 class TicketView(discord.ui.View):
     def __init__(self, bot):
         super().__init__(timeout=None)
@@ -152,7 +254,8 @@ class TicketView(discord.ui.View):
 
     @discord.ui.button(label="Buy SC LOW", style=discord.ButtonStyle.secondary, custom_id="btn_sc_low")
     async def buy_sc_low(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.create_ticket(interaction, "SC LOW")
+        modal = StockOrderModal(self.bot, "SC LOW")
+        await interaction.response.send_modal(modal)
 
     @discord.ui.button(label="Buy RUBY", style=discord.ButtonStyle.danger, custom_id="btn_ruby")
     async def buy_ruby(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -160,11 +263,12 @@ class TicketView(discord.ui.View):
 
     @discord.ui.button(label="Buy STONE", style=discord.ButtonStyle.success, custom_id="btn_stone")
     async def buy_stone(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.create_ticket(interaction, "STONE")
+        await interaction.response.send_message("Pilih tipe stone:", view=StoneTypeView(self.bot), ephemeral=True)
 
     @discord.ui.button(label="Buy COIN", style=discord.ButtonStyle.primary, custom_id="btn_coin")
     async def buy_coin(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.create_ticket(interaction, "COIN")
+        modal = StockOrderModal(self.bot, "COIN")
+        await interaction.response.send_modal(modal)
 
 class StockPostApprovalView(discord.ui.View):
     def __init__(self, bot):
@@ -229,9 +333,7 @@ class StockPaymentAdminView(discord.ui.View):
         embed = discord.Embed(
             title="✅ Pembayaran Diterima",
             description=f"Terima kasih! Pembayaran kamu telah diverifikasi.\n\n"
-                        f"🔗 **PRIVATE SERVER LINK:**\n{link}\n\n"
-                        f"ℹ️ **INFO PENTING:**\n"
-                        f"Silahkan **ketik Username Roblox** kalian di sini agar bisa kami proses/accept join request.",
+                        f"🔗 **PRIVATE SERVER LINK:**\n{link}",
             color=0x00FF00
         )
         
