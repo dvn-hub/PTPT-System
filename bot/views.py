@@ -324,7 +324,8 @@ class TicketPanelView(ui.View):
         # Fetch available products
         from database.models import Patungan, UserSlot
         from sqlalchemy import select, func
-        stmt = select(Patungan).where(Patungan.status == 'open')
+        # FIX: Allow 'running' status as well, so users can join late if slots available
+        stmt = select(Patungan).where(Patungan.status.in_(['open', 'running']))
         result = await self.bot.session.execute(stmt)
         patungans = result.scalars().all()
 

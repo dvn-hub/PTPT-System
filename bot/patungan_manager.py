@@ -1358,70 +1358,138 @@ class PatunganManager:
                     duration = 24
                 else:
                     # 3. Format teks biasa (Fallback)
-                    product_name = title.split('-')[0].strip().replace('*', '')
+                    # Hapus bintang, ambil kata pertama sebelum strip
+                    clean = title.replace('*', '').strip()
+                    if '-' in clean:
+                        product_name = clean.split('-')[0].strip()
+                    else:
+                        product_name = clean
                     duration = 24
+            
+            if not product_name: return False
 
             # Check if exists
             from database.crud import get_patungan
-            existing = await get_patungan(self.bot.session, product_name)
-            if existing:
-                if not existing.message_id:
-                    existing.message_id = str(message.id)
-                    await self.bot.session.commit()
-                return True # Already exists
-
-            # Parse Fields
-            price = 0
-            current_slots = 0
-            total_slots = 19
-            status = 'open'
-            
-            for field in embed.fields:
-                if 'Harga' in field.name:
-                    val = field.value.replace('Rp', '').replace('.', '').replace(',', '').strip()
-                    val = val.split('/')[0].strip()
-                    if val.isdigit(): price = int(val)
-                elif 'Slot' in field.name:
-                    try:
-                        parts = field.value.split('/')
-                        current_slots = int(parts[0].strip())
-                        if len(parts) > 1: total_slots = int(parts[1].strip())
-                    except: pass
-                elif 'Status' in field.name:
-                    val = field.value.lower()
-                    if 'running' in val: status = 'running'
-                    elif 'closed' in val: status = 'closed'
-                    else: status = 'open'
-            
-            # Create Patungan
             from database.models import Patungan, UserSlot, UserTicket
             from sqlalchemy import select
 
-            new_patungan = Patungan(
-                product_name=product_name,
-                display_name=product_name,
-                price=price,
-                total_slots=total_slots,
-                current_slots=current_slots,
-                status=status,
-                duration_hours=duration,
-                message_id=str(message.id)
-            )
+            existing = await get_patungan(self.bot.session, product_name)
             
-            # Try find channel/role
-            guild = message.guild
-            if guild:
-                sanitized_name = re.sub(r'[^a-z0-9]', '-', product_name.lower()).strip('-')
-                channel_name = f"{sanitized_name}-vip"
-                role_name = f"{product_name}-vip"
-                
-                found_channel = discord.utils.get(guild.text_channels, name=channel_name)
-                if found_channel: new_patungan.discord_channel_id = str(found_channel.id)
-                
-                found_role = discord.utils.get(guild.roles, name=role_name)
-                if found_role: new_patungan.discord_role_id = str(found_role.id)
+            # Logic Baru: Jika sudah ada, tetap lanjut ke parsing slot (jangan return True dulu)
+            # Ini memperbaiki masalah di mana patungan terdeteksi ada tapi slotnya kosong/belum masuk DB
             
-            self.bot.session.add(new_patungan)
+            if not existing:
+                # Parse Fields untuk data baru
+                price = 0
+                current_slots = 0
+                total_slots = 19
+                status = 'open'
+                
+                for field in embed.fields:
+                    if 'Harga' in field.name:
+                        val = field.value.replace('Rp', '').replace('.', '').replace(',', '').strip()
+                        val = val.split('/')[0].strip()
+                        if val.isdigit(): price = int(val)
+                    elif 'Slot' in field.name:
+                        try:
+                            parts = field.value.split('/')
+                            current_slots = int(parts[0].strip())
+                            if len(parts) > 1: total_slots = int(parts[1].strip())
+                        except: pass
+                    elif 'Status' in field.name:
+                        val = field.value.lower()
+                        if 'running' in val: status = 'running'
+                        elif 'closed' in val: status = 'closed'
+                        else: status = 'open'
+                
+                # Create Patungan
+                new_patungan = Patungan(
+                    product_name=product_name,
+                    display_name=product_name,
+                    price=price,
+                    total_slots=total_slots,
+                    current_slots=current_slots,
+                    status=status,
+                    duration_hours=duration,
+                    message_id=str(message.id)
+                )
+                
+                # Try find channel/role
+                guild = message.guild
+                if guild:
+                    sanitized_name = re.sub(r'[^a-z0-9]', '-', product_name.lower()).strip('-')
+                    channel_name = f"{sanitized_name}-vip"
+                    role_name = f"{product_name}-vip"
+                    
+                    found_channel = discord.utils.get(guild.text_channels, name=channel_name)
+                    if found_channel: new_patungan.discord_channel_id = str(found_channel.id)
+                    
+                    found_role = discord.utils.get(guild.roles, name=role_name)
+                    if found_role: new_patungan.discord_role_id = str(found_role.id)
+                
+                self.bot.session.add(new_patungan)
+                await self.bot.session.flush()
+                existing = new_patungan # Set existing to new object for slot linking
+            else:
+                if not existing.message_id:
+                    existing.message_id = str(message.id)
+            
+            # ALWAYS Parse Slots (Idempotent Check)
+            # Ini memastikan slot lama tetap terimport meskipun patungan sudah ada
+            if embed.description:
+                slot_lines = embed.description.split('\n')
+                for line in slot_lines:
+                    slot_match = re.search(r'`(\d+)\.`\s*(.+?)\s*-\s*\|\|\s*<@(\d+)>\s*\|\|\s*\((.+?)\)', line)
+                    if slot_match:
+                        s_num = int(slot_match.group(1))
+                        s_game_user = slot_match.group(2).strip()
+                        s_discord_id = slot_match.group(3)
+                        s_status_raw = slot_match.group(4).lower()
+                        
+                        s_status = 'booked'
+                        if 'paid' in s_status_raw: s_status = 'paid'
+                        elif 'waiting' in s_status_raw: s_status = 'waiting_payment'
+                        
+                        # Cek apakah slot ini sudah ada di DB
+                        stmt_slot = select(UserSlot).where(
+                            UserSlot.patungan_version == product_name,
+                            UserSlot.slot_number == s_num
+                        )
+                        res_slot = await self.bot.session.execute(stmt_slot)
+                        slot_exists = res_slot.scalar_one_or_none()
+                        
+                        if not slot_exists:
+                            # Find/Create Dummy Ticket for this user (Legacy)
+                            stmt_t = select(UserTicket).where(
+                                UserTicket.discord_user_id == s_discord_id,
+                                UserTicket.ticket_channel_id == f"legacy-{s_discord_id}"
+                            )
+                            res_t = await self.bot.session.execute(stmt_t)
+                            ticket = res_t.scalar_one_or_none()
+                            
+                            if not ticket:
+                                ticket = UserTicket(
+                                    discord_user_id=s_discord_id,
+                                    discord_username="Legacy User",
+                                    ticket_channel_id=f"legacy-{s_discord_id}",
+                                    ticket_status='closed',
+                                    close_reason='Legacy Import'
+                                )
+                                self.bot.session.add(ticket)
+                                await self.bot.session.flush()
+                            
+                            # Create Slot
+                            new_slot = UserSlot(
+                                ticket_id=ticket.id,
+                                patungan_version=product_name,
+                                slot_number=s_num,
+                                game_username=s_game_user,
+                                display_name=s_game_user,
+                                slot_status=s_status,
+                                locked_price=existing.price
+                            )
+                            self.bot.session.add(new_slot)
+            
             await self.bot.session.commit()
             logger.info(f"Auto-imported legacy patungan: {product_name}")
             return True
