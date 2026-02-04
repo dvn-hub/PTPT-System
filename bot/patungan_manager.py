@@ -194,6 +194,9 @@ class PatunganManager:
                 logger.error("List channel not found")
                 return
             
+            # Force refresh data from DB to ensure latest updates (title, price, etc)
+            self.bot.session.expire_all()
+            
             # Get all active patungans from new model
             from sqlalchemy import select
             stmt = select(Patungan).where(Patungan.status != 'archived')
@@ -273,7 +276,7 @@ class PatunganManager:
         
         embed = discord.Embed(
             title=f"{Emojis.ANNOUNCEMENTS} **NEW SESSION OPENED**",
-            description=f"{Emojis.FIRE_LIGHT_BLUE} **{patungan.display_name}** TELAH DIBUKA!\n**LIMITED SLOT** • **FAST RESPONSE** {Emojis.ROCKET}",
+            description=f"{Emojis.FIRE_LIGHT_BLUE} **{patungan.display_name or patungan.product_name}** TELAH DIBUKA!\n**LIMITED SLOT** • **FAST RESPONSE** {Emojis.ROCKET}",
             color=self.config.COLOR_GOLD
         )
         
@@ -418,10 +421,13 @@ class PatunganManager:
         participants_text += f"\n\n📜 **Script:** {script_display}\n{Emojis.ROCKET} **Start:** {start_display}"
         
         duration = getattr(patungan, 'duration_hours', 24)
+        
+        # Use display_name if available for title
+        display_title = patungan.display_name if patungan.display_name else patungan.product_name
 
         # Create embed
         embed = discord.Embed(
-            title=f"{Emojis.FIRE_BLUE} **{patungan.product_name} - {duration} Jam**",
+            title=f"{Emojis.FIRE_BLUE} **{display_title} - {duration} Jam**",
             description=participants_text,
             color=color
         )
@@ -1069,7 +1075,7 @@ class PatunganManager:
                 color=self.config.COLOR_SUCCESS
             )
             
-            embed.add_field(name="Patungan", value=f"{version} - {patungan.display_name}", inline=True)
+            embed.add_field(name="Patungan", value=f"{version} - {patungan.display_name or patungan.product_name}", inline=True)
             embed.add_field(name="Durasi", value=f"{patungan.duration_hours} jam", inline=True)
             embed.add_field(name="Peserta", value=f"{patungan.current_slots} orang", inline=True)
             

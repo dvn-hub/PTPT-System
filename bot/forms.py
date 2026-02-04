@@ -117,6 +117,7 @@ class CreatePatunganForm(ui.Modal, title='➕ Buat Patungan Baru'):
             # Create Patungan directly (Force save new fields)
             new_patungan = Patungan(
                 product_name=product_name,
+                display_name=product_name, # Default display name
                 price=price,
                 total_slots=max_slots,
                 status='open',

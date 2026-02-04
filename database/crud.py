@@ -2,7 +2,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, and_, or_
 from sqlalchemy.orm import selectinload
-from .models import Patungan, PatunganMaster, UserTicket, UserSlot, PaymentRecord, PriceHistory, SystemLog, BotSetting
+from .models import Patungan, UserTicket, UserSlot, PaymentRecord, PriceHistory, SystemLog, BotSetting
 from datetime import datetime
 import pytz
 import logging
@@ -25,12 +25,12 @@ async def create_patungan(
 ):
     """Create new patungan"""
     try:
-        patungan = PatunganMaster(
-            version=version,
+        patungan = Patungan(
+            product_name=version,
             display_name=display_name,
             duration_hours=duration_hours,
-            price_per_slot=price_per_slot,
-            max_slots=max_slots,
+            price=price_per_slot,
+            total_slots=max_slots,
             description=description
         )
         
@@ -279,7 +279,7 @@ async def get_all_patungans(session: AsyncSession):
 async def get_unpaid_slots(session: AsyncSession, version: str = None):
     """Get unpaid slots"""
     try:
-        stmt = select(UserSlot).join(PatunganMaster).where(
+        stmt = select(UserSlot).join(Patungan).where(
             UserSlot.slot_status.in_(['booked', 'waiting_payment'])
         )
         
@@ -301,9 +301,9 @@ async def get_patungans_with_deadlines(session: AsyncSession):
     """Get patungans with active deadlines"""
     try:
         from datetime import datetime
-        stmt = select(PatunganMaster).where(
-            PatunganMaster.deadline_end.is_not(None),
-            PatunganMaster.deadline_end > datetime.now()
+        stmt = select(Patungan).where(
+            Patungan.deadline_end.is_not(None),
+            Patungan.deadline_end > datetime.now()
         )
         result = await session.execute(stmt)
         return result.scalars().all()
@@ -315,9 +315,9 @@ async def get_upcoming_schedules(session: AsyncSession):
     """Get patungans with upcoming schedules"""
     try:
         from datetime import datetime
-        stmt = select(PatunganMaster).where(
-            PatunganMaster.start_schedule.is_not(None),
-            PatunganMaster.start_schedule > datetime.now()
+        stmt = select(Patungan).where(
+            Patungan.start_schedule.is_not(None),
+            Patungan.start_schedule > datetime.now()
         )
         result = await session.execute(stmt)
         return result.scalars().all()
