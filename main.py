@@ -407,6 +407,10 @@ def main():
     """Main entry point"""
     bot = PatunganBot()
     
+    if not bot.config.DISCORD_TOKEN:
+        logger.critical("❌ DISCORD_TOKEN is missing! Please check your .env file.")
+        sys.exit(1)
+    
     try:
         bot.run(bot.config.DISCORD_TOKEN)
     except KeyboardInterrupt:

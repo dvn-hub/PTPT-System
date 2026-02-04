@@ -1,8 +1,10 @@
 # config.py
 import os
 from dotenv import load_dotenv
+from pathlib import Path
 
-load_dotenv()
+# Load .env explicitly from the project root directory
+load_dotenv(dotenv_path=Path(__file__).parent / '.env')
 
 def get_int_env(key, default=0):
     val = os.getenv(key)
