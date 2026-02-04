@@ -1,4 +1,5 @@
 import discord
+import re
 from discord.ext import commands, tasks
 from config import Config, Emojis
 from database.crud import (
@@ -85,6 +86,28 @@ class PatunganManager:
         except Exception as e:
             logger.error(f"Error setting up admin dashboard: {e}")
 
+    async def initialize_patungan(self, version: str) -> bool:
+        """Initialize patungan: Create channel/role and update DB"""
+        try:
+            patungan = await get_patungan(self.bot.session, version)
+            if not patungan:
+                logger.error(f"Patungan {version} not found")
+                return False
+
+            # Create channel and role
+            channel_id, role_id = await self.create_patungan_channel_role(version, patungan.price_per_slot)
+            
+            if channel_id and role_id:
+                patungan.discord_channel_id = str(channel_id)
+                patungan.discord_role_id = str(role_id)
+                await self.bot.session.commit()
+                logger.info(f"Initialized patungan {version} with Channel {channel_id} and Role {role_id}")
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Error initializing patungan: {e}")
+            return False
+
     async def create_patungan_channel_role(self, version: str, price: int) -> tuple:
         """Create channel and role for patungan"""
         try:
@@ -107,7 +130,7 @@ class PatunganManager:
             
             # Create channel
             # FIX: Sanitize channel name (lowercase, no spaces)
-            sanitized_name = version.lower().replace(" ", "-")
+            sanitized_name = re.sub(r'[^a-z0-9]', '-', version.lower()).strip('-')
             channel_name = f"{sanitized_name}-vip"
             
             category = discord.utils.get(guild.categories, name="『 𝙋𝙏𝙋𝙏 𝙓8 』")
@@ -130,7 +153,7 @@ class PatunganManager:
             }
             
             # Add admin role permission
-            for role_id in self.config.ADMIN_ROLE_IDS:
+            for role_id in [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS:
                 admin_role = guild.get_role(role_id)
                 if admin_role:
                     overwrites[admin_role] = discord.PermissionOverwrite(
@@ -831,12 +854,12 @@ class PatunganManager:
             logger.error(f"Error setting status: {e}")
             return False, str(e)
 
-    async def grant_patungan_access(self, user_id: str, product_name: str):
+    async def grant_patungan_access(self, user_id: str, product_name: str, slots_count: int = 1):
         """Grant role and channel access to user"""
         try:
             guild = self.bot.get_guild(self.config.SERVER_ID)
             if not guild:
-                return
+                return None
             
             # Try get_member first, then fetch_member to ensure we find the user
             try:
@@ -845,22 +868,22 @@ class PatunganManager:
                     member = await guild.fetch_member(int(user_id))
             except Exception as e:
                 logger.error(f"Member {user_id} not found: {e}")
-                return
+                return None
             
             # Ensure channel and role exist
             patungan = await get_patungan(self.bot.session, product_name)
             if not patungan:
-                return
+                return None
             
             # The role and channel should have been created when the patungan was created.
             if not patungan.discord_role_id:
                 logger.error(f"Role ID is missing for patungan '{product_name}'. Cannot grant access.")
-                return
+                return None
             
             role = guild.get_role(int(patungan.discord_role_id))
             if not role:
                 logger.error(f"Role {patungan.discord_role_id} not found")
-                return
+                return None
             
             # Add role if not present
             if role not in member.roles:
@@ -889,12 +912,15 @@ class PatunganManager:
             if patungan.discord_channel_id:
                 channel = guild.get_channel(int(patungan.discord_channel_id))
                 if channel:
-                    await channel.send(f"Selamat bergabung {member.mention} di kloter **{product_name}**! {Emojis.CONFETTI_POPPER}")
+                    await channel.send(f"Selamat bergabung {member.mention} di kloter **{product_name}**! Anda memiliki **{slots_count}** slot. {Emojis.CONFETTI_POPPER}")
+                    return channel
             
             logger.info(f"Granted access to {user_id} for {product_name}")
+            return None
             
         except Exception as e:
             logger.error(f"Error granting access: {e}")
+            return None
     
     async def revoke_patungan_access(self, user_id: str, product_name: str):
         """Revoke role and channel access from user"""

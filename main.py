@@ -207,41 +207,75 @@ class PatunganBot(commands.Bot):
                 if any(role_id in user_roles for role_id in allowed_roles):
                     await message.channel.send(f"🔗 **Private Server Link:**\n{self.config.PRIVATE_SERVER_LINK}")
         
-        # Manual Command: .close (Close Ticket - Admin Only)
-        if message.content.lower() == '.close':
-            if isinstance(message.author, discord.Member):
-                await self.ticket_handler.handle_admin_close_ticket_from_message(message)
-        
-        # Manual Command: .run <version> (Set status to running)
-        if message.content.lower().startswith('.run '):
+        # Manual Command: .run (Set status to running)
+        if message.content.lower().startswith('.run'):
             if isinstance(message.author, discord.Member):
                 user_roles = [r.id for r in message.author.roles]
                 allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS
                 
                 if any(role_id in user_roles for role_id in allowed_roles):
                     parts = message.content.split()
+                    version = None
+                    
                     if len(parts) >= 2:
                         version = parts[1].upper()
-                        success, msg = await self.patungan_manager.set_patungan_status(version, 'running', message.author.name)
-                        await message.channel.send(f"{message.author.mention} {msg}")
-                    else:
-                        await message.channel.send(f"{message.author.mention} ❌ Format: `.run <Versi>` (Contoh: `.run V1`)")
+                    elif message.reference and message.channel.id == self.config.LIST_PTPT_CHANNEL_ID:
+                        try:
+                            replied_msg = await message.channel.fetch_message(message.reference.message_id)
+                            if replied_msg.author == self.user and replied_msg.embeds:
+                                title = replied_msg.embeds[0].title
+                                match = re.search(r'\*\*(.*?)\s*-', title)
+                                if match:
+                                    version = match.group(1).strip()
+                        except:
+                            pass
 
-        # Manual Command: .close <version> (Set status to closed - Patungan Only)
-        # Note: .close without arguments is handled above for tickets
-        if message.content.lower().startswith('.close '):
+                    if version:
+                        success, msg = await self.patungan_manager.set_patungan_status(version, 'running', message.author.name)
+                        await message.channel.send(f"{message.author.mention} {msg}", delete_after=10)
+                        try: await message.delete()
+                        except: pass
+                    else:
+                        await message.channel.send(f"{message.author.mention} ❌ Format: `.run <Versi>` atau Reply pesan di List PTPT.", delete_after=5)
+
+        # Manual Command: .close (Ticket or Patungan)
+        if message.content.lower().startswith('.close'):
             if isinstance(message.author, discord.Member):
+                # 1. Ticket Close (Exact match .close, NOT in List Channel)
+                if message.content.lower().strip() == '.close' and message.channel.id != self.config.LIST_PTPT_CHANNEL_ID:
+                    await self.ticket_handler.handle_admin_close_ticket_from_message(message)
+                    return
+
+                # 2. Patungan Close (Admin Only)
                 user_roles = [r.id for r in message.author.roles]
                 allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS
                 
                 if any(role_id in user_roles for role_id in allowed_roles):
                     parts = message.content.split()
+                    version = None
+
                     if len(parts) >= 2:
                         version = parts[1].upper()
+                    elif message.reference and message.channel.id == self.config.LIST_PTPT_CHANNEL_ID:
+                        try:
+                            replied_msg = await message.channel.fetch_message(message.reference.message_id)
+                            if replied_msg.author == self.user and replied_msg.embeds:
+                                title = replied_msg.embeds[0].title
+                                match = re.search(r'\*\*(.*?)\s*-', title)
+                                if match:
+                                    version = match.group(1).strip()
+                        except:
+                            pass
+
+                    if version:
                         success, msg = await self.patungan_manager.set_patungan_status(version, 'closed', message.author.name)
-                        await message.channel.send(f"{message.author.mention} {msg}")
+                        await message.channel.send(f"{message.author.mention} {msg}", delete_after=10)
+                        try: await message.delete()
+                        except: pass
+                    elif message.channel.id == self.config.LIST_PTPT_CHANNEL_ID:
+                        await message.channel.send(f"{message.author.mention} ❌ Format: `.close <Versi>` atau Reply pesan di List PTPT.", delete_after=5)
                     else:
-                        await message.channel.send(f"{message.author.mention} ❌ Format: `.close <Versi>` (Contoh: `.close V1`)")
+                        pass
 
         # Manual Command: .cancel <slot_number> (in list-ptpt, as reply)
         if message.content.lower().startswith('.cancel'):

@@ -125,106 +125,36 @@ class AdminHandler:
         Handle logic saat payment diapprove:
         1. Buat/Cek Group Channel (Shared)
         2. Add User ke Group Channel
+        
+        UPDATED FLOW:
+        Channel & Role created at product creation.
+        Here we just assign role and add user to channel via Manager.
         """
-        # --- SETUP AWAL ---
-        guild = interaction.guild
-        if not guild:
-            print("[ERROR] Guild is None")
-            return None
-
-        # Permission Setup (User & Bot)
-        overwrites = {
-            guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True, manage_channels=True),
-            user: discord.PermissionOverwrite(read_messages=True, send_messages=True)
-        }
-        
-        # Add Admin Roles (Overlord & Warden)
-        SERVER_OVERLORD_ID = 1448349975560982628
-        SERVER_WARDEN_ID = 1448569110899195914
-        
-        overlord = guild.get_role(SERVER_OVERLORD_ID)
-        warden = guild.get_role(SERVER_WARDEN_ID)
-        
-        if overlord:
-            overwrites[overlord] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
-        if warden:
-            overwrites[warden] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
-
-        # Bersihkan nama channel
-        clean_name = re.sub(r'[^a-z0-9]', '-', product_name.lower()).strip('-')
-        channel_name = f"{clean_name}-vip"
-
-        # 1. Tentukan KATEGORI TARGET
-        # Prioritas: Cari by Name "『 𝙋𝙏𝙋𝙏 𝙓8 』" -> Cari by ID -> Buat Baru
-        CATEGORY_NAME = "『 𝙋𝙏𝙋𝙏 𝙓8 』"
-        target_category = discord.utils.get(guild.categories, name=CATEGORY_NAME)
-        
-        if not target_category:
-            # Fallback ID (Old Category)
-            GROUP_CATEGORY_ID = 1467454477337362516
-            target_category = guild.get_channel(GROUP_CATEGORY_ID)
-        
-        # 2. PRINT DEBUG
-        print(f"[DEBUG] Mencoba buat channel: {channel_name}")
-        print(f"[DEBUG] Target Category: {target_category} (None artinya tidak ketemu)")
-        
-        # 3. LOGIC PEMBUATAN CHANNEL (Anti-Crash)
-        new_channel = None
         try:
-            # Cek dulu channel sudah ada atau belum
-            existing_channel = discord.utils.get(guild.text_channels, name=channel_name)
+            # Call manager to grant access (Role + Channel)
+            channel = await self.bot.patungan_manager.grant_patungan_access(str(user.id), product_name, slots_count)
             
-            if existing_channel:
-                print(f"[DEBUG] Channel sudah ada: {existing_channel.name}")
-                new_channel = existing_channel
+            if channel:
+                print(f"[SUCCESS] User {user.display_name} access granted to {channel.name}")
+                return channel
             else:
-                # KALAU BELUM ADA -> BUAT BARU
-                if target_category:
-                    # Skenario A: Kategori Ketemu -> Buat di dalamnya
-                    print("[DEBUG] Membuat channel DI DALAM Kategori.")
-                    new_channel = await target_category.create_text_channel(
-                        name=channel_name,
-                        overwrites=overwrites,
-                        topic=f"Group Chat untuk {product_name}"
-                    )
-                else:
-                    # Skenario B: Kategori Hilang -> Buat Kategori Baru lalu buat channel
-                    print(f"[WARNING] Kategori '{CATEGORY_NAME}' tidak ada. Membuat baru...")
-                    try:
-                        target_category = await guild.create_category(CATEGORY_NAME)
-                        new_channel = await target_category.create_text_channel(
-                            name=channel_name,
-                            overwrites=overwrites,
-                            topic=f"Group Chat untuk {product_name}"
-                        )
-                    except Exception as e:
-                        print(f"[ERROR] Gagal buat kategori: {e}. Fallback ke Root.")
-                        new_channel = await interaction.guild.create_text_channel(
-                            name=channel_name,
-                            overwrites=overwrites,
-                            topic=f"Group Chat untuk {product_name}"
-                        )
+                print(f"[WARNING] Failed to grant access or channel not found for {product_name}")
+                # Fallback: Try to initialize if missing (Lazy Init)
+                from database.crud import get_patungan
+                patungan = await get_patungan(self.bot.session, product_name)
                 
-                # Send Welcome Header for new channel
-                embed = discord.Embed(
-                    title=f"{Emojis.CONFETTI_POPPER} WELCOME TO {product_name.upper()} GROUP",
-                    description=f"Channel ini adalah grup chat khusus untuk **VIP Member {product_name}**.\nSilakan berdiskusi dan tunggu instruksi admin.",
-                    color=self.config.COLOR_GOLD
-                )
-                await new_channel.send(embed=embed)
-            
-            # 4. TAMBAHKAN USER KE CHANNEL (Apapun skenarionya)
-            if user and new_channel:
-                await new_channel.set_permissions(user, read_messages=True, send_messages=True)
-                await new_channel.send(f"Selamat datang {user.mention} di grup patungan! Anda memiliki **{slots_count}** slot.")
-                print(f"[SUCCESS] User {user.display_name} ditambahkan ke {new_channel.name}")
-            
-            return new_channel
-            
+                if patungan and (not patungan.discord_channel_id or not patungan.discord_role_id):
+                    print(f"[INFO] Initializing patungan system for {product_name} (Lazy Init)")
+                    success = await self.bot.patungan_manager.initialize_patungan(product_name)
+                    if success:
+                        # Retry grant
+                        channel = await self.bot.patungan_manager.grant_patungan_access(str(user.id), product_name, slots_count)
+                        return channel
+                
+                return None
+
         except Exception as e:
-            print(f"[CRITICAL ERROR] Gagal buat channel peserta: {e}")
-            # Lanjut codingan, jangan return. Biar database tetap ke-update.
+            logger.error(f"Error in approve_payment: {e}")
             return None
 
     async def remove_participant_slot(self, interaction: discord.Interaction, product_name: str, username: str):
@@ -247,10 +177,26 @@ class AdminHandler:
                 await interaction.followup.send(f"❌ Member **{username}** tidak ditemukan di patungan **{product_name}**.", ephemeral=True)
                 return
 
+            # Capture slot number for shifting
+            removed_slot_number = slot.slot_number
+
             # 2. Update Status Slot -> 'kicked' (Cancelled)
             slot.slot_status = 'kicked'
+            slot.slot_number = 0 # Remove from sequence
             
-            # 3. Update Jumlah Slot di Patungan
+            # 3. Shift Up Slots (Slot 3 -> 2, etc)
+            stmt_shift = select(UserSlot).where(
+                UserSlot.patungan_version == product_name,
+                UserSlot.slot_number > removed_slot_number,
+                UserSlot.slot_status.in_(['booked', 'waiting_payment', 'paid'])
+            ).order_by(UserSlot.slot_number)
+            result_shift = await self.bot.session.execute(stmt_shift)
+            slots_to_shift = result_shift.scalars().all()
+            
+            for s in slots_to_shift:
+                s.slot_number -= 1
+
+            # 4. Update Jumlah Slot di Patungan
             from database.crud import get_patungan
             patungan = await get_patungan(self.bot.session, product_name)
             if patungan:
@@ -264,11 +210,11 @@ class AdminHandler:
             
             await self.bot.session.commit()
 
-            # 4. Refresh List Channel
+            # 5. Refresh List Channel
             await self.bot.patungan_manager.update_list_channel()
 
-            await interaction.followup.send(f"✅ Member **{username}** berhasil dihapus dari slot **{product_name}**.", ephemeral=True)
-            logger.info(f"Admin {interaction.user.name} removed participant {username} from {product_name}")
+            await interaction.followup.send(f"✅ Member **{username}** berhasil dihapus dari slot **{product_name}**. Slot dibawahnya telah dinaikkan.", ephemeral=True)
+            logger.info(f"Admin {interaction.user.name} removed participant {username} from {product_name} (Slot {removed_slot_number})")
 
         except Exception as e:
             logger.error(f"Error removing participant: {e}")
@@ -295,8 +241,21 @@ class AdminHandler:
 
             # 2. Update Status Slot -> 'kicked'
             slot.slot_status = 'kicked'
+            slot.slot_number = 0 # Remove from sequence
             
-            # 3. Update Jumlah Slot di Patungan (to be consistent)
+            # 3. Shift Up Slots
+            stmt_shift = select(UserSlot).where(
+                UserSlot.patungan_version == product_name,
+                UserSlot.slot_number > slot_number,
+                UserSlot.slot_status.in_(['booked', 'waiting_payment', 'paid'])
+            ).order_by(UserSlot.slot_number)
+            result_shift = await self.bot.session.execute(stmt_shift)
+            slots_to_shift = result_shift.scalars().all()
+            
+            for s in slots_to_shift:
+                s.slot_number -= 1
+            
+            # 4. Update Jumlah Slot di Patungan (to be consistent)
             from database.crud import get_patungan
             patungan = await get_patungan(self.bot.session, product_name)
             if patungan:
@@ -308,15 +267,15 @@ class AdminHandler:
                 except Exception as e:
                     logger.error(f"Error updating slots for {product_name}: {e}")
             
-            # 4. Commit changes to DB
+            # 5. Commit changes to DB
             await self.bot.session.commit()
 
-            # 5. Refresh List Channel
+            # 6. Refresh List Channel
             await self.bot.patungan_manager.update_list_channel()
 
             logger.info(f"Admin {admin_user.name} cancelled slot #{slot_number} ({game_username}) from {product_name}")
             
-            # 6. Notify user in ticket
+            # 7. Notify user in ticket
             try:
                 if slot.ticket and slot.ticket.ticket_channel_id:
                     ticket_channel = self.bot.get_channel(int(slot.ticket.ticket_channel_id))
@@ -325,7 +284,7 @@ class AdminHandler:
             except Exception as e:
                 logger.error(f"Failed to send cancellation notice to ticket channel: {e}")
 
-            return True, f"✅ Slot **#{slot_number}** ({game_username}) di patungan **{product_name}** berhasil dibatalkan."
+            return True, f"✅ Slot **#{slot_number}** ({game_username}) di patungan **{product_name}** berhasil dibatalkan dan slot dirapikan."
 
         except Exception as e:
             logger.error(f"Error cancelling slot by number: {e}")
