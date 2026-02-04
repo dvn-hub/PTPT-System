@@ -5,6 +5,7 @@ import re
 from config import Config, Emojis
 from database.models import UserSlot
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 logger = logging.getLogger(__name__)
 
@@ -272,3 +273,55 @@ class AdminHandler:
         except Exception as e:
             logger.error(f"Error removing participant: {e}")
             await interaction.followup.send(f"❌ Terjadi kesalahan: {str(e)}", ephemeral=True)
+
+    async def cancel_slot_by_number(self, product_name: str, slot_number: int, admin_user: discord.User):
+        """
+        Logic untuk membatalkan slot berdasarkan nomor slot.
+        """
+        try:
+            # 1. Cari Slot di Database
+            stmt = select(UserSlot).options(selectinload(UserSlot.ticket)).where(
+                UserSlot.patungan_version == product_name,
+                UserSlot.slot_number == slot_number,
+                UserSlot.slot_status.in_(['booked', 'waiting_payment', 'paid'])
+            )
+            result = await self.bot.session.execute(stmt)
+            slot = result.scalar_one_or_none()
+
+            if not slot:
+                return False, f"❌ Slot **#{slot_number}** tidak ditemukan atau sudah dibatalkan di patungan **{product_name}**."
+
+            game_username = slot.game_username
+
+            # 2. Update Status Slot -> 'kicked'
+            slot.slot_status = 'kicked'
+            
+            # 3. Update Jumlah Slot di Patungan (to be consistent)
+            from database.crud import get_patungan
+            patungan = await get_patungan(self.bot.session, product_name)
+            if patungan:
+                patungan.current_slots = max(0, patungan.current_slots - 1)
+            
+            # 4. Commit changes to DB
+            await self.bot.session.commit()
+
+            # 5. Refresh List Channel
+            await self.bot.patungan_manager.update_list_channel()
+
+            logger.info(f"Admin {admin_user.name} cancelled slot #{slot_number} ({game_username}) from {product_name}")
+            
+            # 6. Notify user in ticket
+            try:
+                if slot.ticket and slot.ticket.ticket_channel_id:
+                    ticket_channel = self.bot.get_channel(int(slot.ticket.ticket_channel_id))
+                    if ticket_channel:
+                        await ticket_channel.send(f"ℹ️ Slot **#{slot_number}** ({game_username}) untuk patungan **{product_name}** telah dibatalkan oleh admin {admin_user.mention}.")
+            except Exception as e:
+                logger.error(f"Failed to send cancellation notice to ticket channel: {e}")
+
+            return True, f"✅ Slot **#{slot_number}** ({game_username}) di patungan **{product_name}** berhasil dibatalkan."
+
+        except Exception as e:
+            logger.error(f"Error cancelling slot by number: {e}")
+            await self.bot.session.rollback()
+            return False, f"❌ Terjadi kesalahan: {str(e)}"

@@ -4,6 +4,7 @@ from discord.ext import commands, tasks
 import asyncio
 import sys
 import traceback
+import re
 from config import Config
 from database.setup import init_db, get_session
 from bot.patungan_manager import PatunganManager
@@ -210,6 +211,59 @@ class PatunganBot(commands.Bot):
         if message.content.lower() == '.close':
             if isinstance(message.author, discord.Member):
                 await self.ticket_handler.handle_admin_close_ticket_from_message(message)
+
+        # Manual Command: .cancel <slot_number> (in list-ptpt, as reply)
+        if message.content.lower().startswith('.cancel'):
+            # Only trigger in list-ptpt channel
+            if message.channel.id != self.config.LIST_PTPT_CHANNEL_ID:
+                return
+
+            # Check Permission
+            if isinstance(message.author, discord.Member):
+                user_roles = [r.id for r in message.author.roles]
+                allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS
+                if not any(role_id in user_roles for role_id in allowed_roles):
+                    return # Silently ignore if not admin
+            
+            # Check if it's a reply
+            if not message.reference or not message.reference.message_id:
+                return # Silently ignore if not a reply
+
+            try:
+                # Delete the command message to keep channel clean
+                await message.delete()
+
+                replied_message = await message.channel.fetch_message(message.reference.message_id)
+                if not replied_message.author == self.user or not replied_message.embeds:
+                    return # Not a reply to a valid bot embed
+
+                embed_title = replied_message.embeds[0].title
+                # Title format: "🔥 **V1 - 24 Jam**"
+                product_name_match = re.search(r'\*\*(.*?)\s*-', embed_title)
+                if not product_name_match:
+                    return # Embed title format not recognized
+                
+                product_name = product_name_match.group(1).strip()
+
+                # Parse slot number
+                parts = message.content.split()
+                if len(parts) != 2 or not parts[1].isdigit():
+                    await message.channel.send(f"{message.author.mention} ❌ Format salah. Gunakan: `.cancel <nomor_slot>`", delete_after=10)
+                    return
+                
+                slot_number = int(parts[1])
+
+                # Call handler
+                success, msg = await self.admin_handler.cancel_slot_by_number(product_name, slot_number, message.author)
+                
+                # Send result
+                await message.channel.send(f"{message.author.mention} {msg}", delete_after=20)
+
+            except discord.NotFound:
+                return # Replied message was deleted
+            except Exception as e:
+                logger.error(f"Error handling .cancel command: {e}")
+                await message.channel.send(f"{message.author.mention} ❌ Terjadi kesalahan.", delete_after=10)
 
         # Manual Command: !setworkers (Update list workers dynamic)
         if message.content.lower().startswith('!setworkers'):
