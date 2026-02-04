@@ -1327,6 +1327,116 @@ class PatunganManager:
                 return 0, "Channel not found"
             
             count = 0
+            async for message in channel.history(limit=50):
+                if message.author == self.bot.user and await self.import_patungan_from_message(message):
+                    count += 1
+            
+            return count, f"Berhasil import {count} patungan lama."
+        except Exception as e:
+            logger.error(f"Error syncing legacy patungan: {e}")
+            return 0, str(e)
+
+    async def import_patungan_from_message(self, message: discord.Message) -> bool:
+        """Import single patungan from message embed (Auto-Import for legacy)"""
+        try:
+            if not message.embeds: return False
+            embed = message.embeds[0]
+            title = embed.title
+            if not title: return False
+
+            # Regex logic: Lebih fleksibel membaca judul
+            # 1. Format standar: "**V1 - 24 Jam**"
+            match = re.search(r'\*\*(.+?)\s*-\s*(\d+)\s*Jam\*\*', title)
+            if match:
+                product_name = match.group(1).strip()
+                duration = int(match.group(2))
+            else:
+                # 2. Format bold nama saja: "**V1**"
+                match = re.search(r'\*\*(.+?)\*\*', title)
+                if match:
+                    product_name = match.group(1).strip()
+                    duration = 24
+                else:
+                    # 3. Format teks biasa (Fallback)
+                    product_name = title.split('-')[0].strip().replace('*', '')
+                    duration = 24
+
+            # Check if exists
+            from database.crud import get_patungan
+            existing = await get_patungan(self.bot.session, product_name)
+            if existing:
+                if not existing.message_id:
+                    existing.message_id = str(message.id)
+                    await self.bot.session.commit()
+                return True # Already exists
+
+            # Parse Fields
+            price = 0
+            current_slots = 0
+            total_slots = 19
+            status = 'open'
+            
+            for field in embed.fields:
+                if 'Harga' in field.name:
+                    val = field.value.replace('Rp', '').replace('.', '').replace(',', '').strip()
+                    val = val.split('/')[0].strip()
+                    if val.isdigit(): price = int(val)
+                elif 'Slot' in field.name:
+                    try:
+                        parts = field.value.split('/')
+                        current_slots = int(parts[0].strip())
+                        if len(parts) > 1: total_slots = int(parts[1].strip())
+                    except: pass
+                elif 'Status' in field.name:
+                    val = field.value.lower()
+                    if 'running' in val: status = 'running'
+                    elif 'closed' in val: status = 'closed'
+                    else: status = 'open'
+            
+            # Create Patungan
+            from database.models import Patungan, UserSlot, UserTicket
+            from sqlalchemy import select
+
+            new_patungan = Patungan(
+                product_name=product_name,
+                display_name=product_name,
+                price=price,
+                total_slots=total_slots,
+                current_slots=current_slots,
+                status=status,
+                duration_hours=duration,
+                message_id=str(message.id)
+            )
+            
+            # Try find channel/role
+            guild = message.guild
+            if guild:
+                sanitized_name = re.sub(r'[^a-z0-9]', '-', product_name.lower()).strip('-')
+                channel_name = f"{sanitized_name}-vip"
+                role_name = f"{product_name}-vip"
+                
+                found_channel = discord.utils.get(guild.text_channels, name=channel_name)
+                if found_channel: new_patungan.discord_channel_id = str(found_channel.id)
+                
+                found_role = discord.utils.get(guild.roles, name=role_name)
+                if found_role: new_patungan.discord_role_id = str(found_role.id)
+            
+            self.bot.session.add(new_patungan)
+            await self.bot.session.commit()
+            logger.info(f"Auto-imported legacy patungan: {product_name}")
+            return True
+        except Exception as e:
+            logger.error(f"Error importing single patungan: {e}")
+            return False
+
+    async def sync_legacy_patungan(self, channel_id: int):
+        """Sync patungan data from existing embeds in list channel"""
+        try:
+            channel = self.bot.get_channel(channel_id)
+            if not channel:
+                return 0, "Channel not found"
+            
+            count = 0
             from database.crud import get_patungan
             from database.models import Patungan, UserSlot, UserTicket
             from sqlalchemy import select

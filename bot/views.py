@@ -288,9 +288,15 @@ class AdminDashboardView(ui.View):
             await interaction.response.send_message("❌ Hanya admin yang bisa menggunakan fitur ini.", ephemeral=True)
             return
             
-        patungans = await get_available_patungans(self.bot.session)
+        # FIX: Gunakan get_all_patungans agar bisa hapus patungan yang statusnya running/closed juga
+        patungans = await get_all_patungans(self.bot.session)
+        
         if not patungans:
-            await interaction.response.send_message("❌ Tidak ada patungan aktif.", ephemeral=True)
+            await interaction.response.send_message(
+                "❌ Tidak ada data patungan di database.\n"
+                "💡 **Tips:** Jika ini patungan lama, gunakan `/import_legacy` atau `/import_specific` dulu.", 
+                ephemeral=True
+            )
             return
             
         view = DeletePatunganSelectView(self.bot, patungans)
