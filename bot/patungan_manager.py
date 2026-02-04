@@ -311,7 +311,8 @@ class PatunganManager:
             
         embed.add_field(name=f"{Emojis.ROCKET} **Start:**", value=start_display, inline=True)
         
-        embed.set_footer(text=f"Updated: {datetime.now().strftime('%H:%M')} WIB")
+        wib_now = datetime.utcnow() + timedelta(hours=7)
+        embed.set_footer(text=f"Updated: {wib_now.strftime('%H:%M')} WIB")
         return embed
 
     async def create_patungan_embed(self, patungan) -> discord.Embed:
@@ -432,7 +433,8 @@ class PatunganManager:
         embed.add_field(name=f"{Emojis.TYPING} Progress", value=f"{progress_bar} {progress_percent}%", inline=True)
         embed.add_field(name=f"{Emojis.RING_BELL} Status", value=f"{status_emoji} {main_status_text}", inline=True)
         
-        embed.set_footer(text=f"ID: {patungan.id} | Updated: {datetime.now().strftime('%H:%M')} WIB")
+        wib_now = datetime.utcnow() + timedelta(hours=7)
+        embed.set_footer(text=f"ID: {patungan.id} | Updated: {wib_now.strftime('%H:%M')} WIB")
         
         return embed
     
