@@ -129,6 +129,18 @@ class CreatePatunganForm(ui.Modal, title='➕ Buat Patungan Baru'):
             self.bot.session.add(new_patungan)
             await self.bot.session.commit()
             
+            # Create Channel & Role immediately
+            channel_id, role_id = await self.bot.patungan_manager.create_patungan_channel_role(
+                version=product_name,
+                price=price
+            )
+            
+            if channel_id and role_id:
+                new_patungan.discord_channel_id = str(channel_id)
+                new_patungan.discord_role_id = str(role_id)
+                await self.bot.session.commit()
+                logger.info(f"Created channel ({channel_id}) and role ({role_id}) for {product_name}")
+
             # 1. Send Announcement
             announcement_channel = interaction.guild.get_channel(self.config.ANNOUNCEMENTS_CHANNEL_ID)
             if announcement_channel:

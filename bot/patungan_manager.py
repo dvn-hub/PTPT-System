@@ -267,17 +267,26 @@ class PatunganManager:
     async def create_announcement_embed(self, patungan) -> discord.Embed:
         """Create simplified embed for announcement (Status Only)"""
         # Determine color based on status
+        title_text = "NEW SESSION OPENED"
         if patungan.status == 'open':
             color = self.config.COLOR_SUCCESS
             status_emoji = "🟢"
+        elif patungan.status == 'running':
+            color = self.config.COLOR_INFO
+            status_emoji = "🚀"
+            title_text = "SESSION RUNNING"
         else:
             color = self.config.COLOR_ERROR
             status_emoji = "🔴"
+            title_text = "SESSION CLOSED"
+            
+        # Use display_name if available for title
+        display_title = patungan.display_name if patungan.display_name else patungan.product_name
         
         embed = discord.Embed(
-            title=f"{Emojis.ANNOUNCEMENTS} **NEW SESSION OPENED**",
-            description=f"{Emojis.FIRE_LIGHT_BLUE} **{patungan.display_name or patungan.product_name}** TELAH DIBUKA!\n**LIMITED SLOT** • **FAST RESPONSE** {Emojis.ROCKET}",
-            color=self.config.COLOR_GOLD
+            title=f"{Emojis.ANNOUNCEMENTS} **{title_text}**",
+            description=f"{Emojis.FIRE_LIGHT_BLUE} **{display_title}**\n**STATUS:** {status_emoji} {patungan.status.upper()}",
+            color=color
         )
         
         price_display = f"Rp {patungan.price_per_slot:,}" if patungan.price_per_slot > 0 else "GRATIS"
@@ -334,18 +343,22 @@ class PatunganManager:
         # Determine status display
         remaining_slots = patungan.total_slots - current_slots
         
-        if current_slots >= patungan.total_slots:
+        if patungan.status == 'closed':
             main_status_text = "CLOSED"
+            status_emoji = Emojis.BAN
+            color = self.config.COLOR_ERROR
+        elif patungan.status == 'running':
+            main_status_text = "RUNNING"
+            status_emoji = Emojis.ROCKET
+            color = self.config.COLOR_INFO
+        elif current_slots >= patungan.total_slots:
+            main_status_text = "FULL BOOKED"
             status_emoji = Emojis.BAN
             color = self.config.COLOR_ERROR
         elif patungan.status == 'open':
             main_status_text = f"OPEN - Sisa {remaining_slots} Slot"
             status_emoji = Emojis.OPEN_SIGN
             color = self.config.COLOR_SUCCESS
-        elif patungan.status == 'closed':
-            main_status_text = "CLOSED"
-            status_emoji = Emojis.BAN
-            color = self.config.COLOR_ERROR
         else:
             main_status_text = patungan.status.upper()
             status_emoji = Emojis.LOADING_CIRCLE
@@ -791,6 +804,33 @@ class PatunganManager:
         except Exception as e:
             logger.error(f"Error sending schedule announcement: {e}")
     
+    async def set_patungan_status(self, version: str, status: str, admin_name: str):
+        """Set patungan status manually"""
+        try:
+            # Update DB
+            success = await update_patungan_status(self.bot.session, version, status)
+            if not success:
+                return False, "Patungan tidak ditemukan."
+
+            # Log
+            await create_system_log(
+                session=self.bot.session,
+                log_type='status_change',
+                log_level='info',
+                patungan_version=version,
+                action=f'Status changed to {status} by {admin_name}',
+                details=f'New status: {status}'
+            )
+
+            # Update List & Announcement
+            await self.update_list_channel()
+            await self.update_announcement_message(version)
+            
+            return True, f"Status patungan **{version}** berhasil diubah menjadi **{status.upper()}**."
+        except Exception as e:
+            logger.error(f"Error setting status: {e}")
+            return False, str(e)
+
     async def grant_patungan_access(self, user_id: str, product_name: str):
         """Grant role and channel access to user"""
         try:
@@ -812,15 +852,10 @@ class PatunganManager:
             if not patungan:
                 return
             
-            if not patungan.discord_role_id or not patungan.discord_channel_id:
-                channel_id, role_id = await self.create_patungan_channel_role(product_name, patungan.price)
-                if channel_id and role_id:
-                    patungan.discord_channel_id = str(channel_id)
-                    patungan.discord_role_id = str(role_id)
-                    await self.bot.session.commit()
-                else:
-                    logger.error(f"Failed to create channel/role for {product_name}")
-                    return
+            # The role and channel should have been created when the patungan was created.
+            if not patungan.discord_role_id:
+                logger.error(f"Role ID is missing for patungan '{product_name}'. Cannot grant access.")
+                return
             
             role = guild.get_role(int(patungan.discord_role_id))
             if not role:

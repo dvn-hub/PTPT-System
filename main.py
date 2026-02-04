@@ -211,6 +211,37 @@ class PatunganBot(commands.Bot):
         if message.content.lower() == '.close':
             if isinstance(message.author, discord.Member):
                 await self.ticket_handler.handle_admin_close_ticket_from_message(message)
+        
+        # Manual Command: .run <version> (Set status to running)
+        if message.content.lower().startswith('.run '):
+            if isinstance(message.author, discord.Member):
+                user_roles = [r.id for r in message.author.roles]
+                allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS
+                
+                if any(role_id in user_roles for role_id in allowed_roles):
+                    parts = message.content.split()
+                    if len(parts) >= 2:
+                        version = parts[1].upper()
+                        success, msg = await self.patungan_manager.set_patungan_status(version, 'running', message.author.name)
+                        await message.channel.send(f"{message.author.mention} {msg}")
+                    else:
+                        await message.channel.send(f"{message.author.mention} ❌ Format: `.run <Versi>` (Contoh: `.run V1`)")
+
+        # Manual Command: .close <version> (Set status to closed - Patungan Only)
+        # Note: .close without arguments is handled above for tickets
+        if message.content.lower().startswith('.close '):
+            if isinstance(message.author, discord.Member):
+                user_roles = [r.id for r in message.author.roles]
+                allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS
+                
+                if any(role_id in user_roles for role_id in allowed_roles):
+                    parts = message.content.split()
+                    if len(parts) >= 2:
+                        version = parts[1].upper()
+                        success, msg = await self.patungan_manager.set_patungan_status(version, 'closed', message.author.name)
+                        await message.channel.send(f"{message.author.mention} {msg}")
+                    else:
+                        await message.channel.send(f"{message.author.mention} ❌ Format: `.close <Versi>` (Contoh: `.close V1`)")
 
         # Manual Command: .cancel <slot_number> (in list-ptpt, as reply)
         if message.content.lower().startswith('.cancel'):
