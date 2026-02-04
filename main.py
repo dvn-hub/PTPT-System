@@ -218,6 +218,7 @@ class PatunganBot(commands.Bot):
                 if any(role_id in user_roles for role_id in allowed_roles):
                     parts = message.content.split()
                     version = None
+                    replied_msg = None
                     
                     if len(parts) >= 2:
                         version = parts[1].upper().strip()
@@ -245,6 +246,15 @@ class PatunganBot(commands.Bot):
 
                     if version:
                         success, msg = await self.patungan_manager.set_patungan_status(version, 'running', message.author.name)
+                        
+                        # AUTO-IMPORT FALLBACK (Fix for "Patungan tidak ditemukan" on old embeds)
+                        if not success and "tidak ditemukan" in msg and replied_msg:
+                            logger.info(f"Attempting auto-import for {version}...")
+                            import_success = await self.patungan_manager.import_patungan_from_message(replied_msg)
+                            if import_success:
+                                # Retry setting status
+                                success, msg = await self.patungan_manager.set_patungan_status(version, 'running', message.author.name)
+                        
                         await message.channel.send(f"{message.author.mention} {msg}", delete_after=10)
                         try: await message.delete()
                         except: pass
@@ -266,6 +276,7 @@ class PatunganBot(commands.Bot):
                 if any(role_id in user_roles for role_id in allowed_roles):
                     parts = message.content.split()
                     version = None
+                    replied_msg = None
 
                     if len(parts) >= 2:
                         version = parts[1].upper().strip()
@@ -293,6 +304,15 @@ class PatunganBot(commands.Bot):
 
                     if version:
                         success, msg = await self.patungan_manager.set_patungan_status(version, 'closed', message.author.name)
+                        
+                        # AUTO-IMPORT FALLBACK
+                        if not success and "tidak ditemukan" in msg and replied_msg:
+                            logger.info(f"Attempting auto-import for {version}...")
+                            import_success = await self.patungan_manager.import_patungan_from_message(replied_msg)
+                            if import_success:
+                                # Retry setting status
+                                success, msg = await self.patungan_manager.set_patungan_status(version, 'closed', message.author.name)
+
                         await message.channel.send(f"{message.author.mention} {msg}", delete_after=10)
                         try: await message.delete()
                         except: pass

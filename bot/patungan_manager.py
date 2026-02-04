@@ -1466,3 +1466,100 @@ class PatunganManager:
         except Exception as e:
             logger.error(f"Error syncing legacy patungan: {e}")
             return 0, str(e)
+
+    async def import_patungan_from_message(self, message: discord.Message) -> bool:
+        """Import single patungan from message embed (Auto-Import for legacy)"""
+        try:
+            if not message.embeds: return False
+            embed = message.embeds[0]
+            title = embed.title
+            if not title: return False
+
+            # Regex logic (same as sync_legacy)
+            match = re.search(r'\*\*(.+?)\s*-\s*(\d+)\s*Jam\*\*', title)
+            if not match:
+                match = re.search(r'\*\*(.+?)\*\*', title)
+                if not match: return False
+                product_name = match.group(1).strip()
+                duration = 24
+            else:
+                product_name = match.group(1).strip()
+                duration = int(match.group(2))
+
+            # Check if exists
+            from database.crud import get_patungan
+            existing = await get_patungan(self.bot.session, product_name)
+            if existing:
+                if not existing.message_id:
+                    existing.message_id = str(message.id)
+                    await self.bot.session.commit()
+                return True # Already exists
+
+            # Parse Fields
+            price = 0
+            current_slots = 0
+            total_slots = 19
+            status = 'open'
+            
+            for field in embed.fields:
+                if 'Harga' in field.name:
+                    val = field.value.replace('Rp', '').replace('.', '').replace(',', '').strip()
+                    val = val.split('/')[0].strip()
+                    if val.isdigit(): price = int(val)
+                elif 'Slot' in field.name:
+                    try:
+                        parts = field.value.split('/')
+                        current_slots = int(parts[0].strip())
+                        if len(parts) > 1: total_slots = int(parts[1].strip())
+                    except: pass
+                elif 'Status' in field.name:
+                    val = field.value.lower()
+                    if 'running' in val: status = 'running'
+                    elif 'closed' in val: status = 'closed'
+                    else: status = 'open'
+            
+            # Create Patungan
+            from database.models import Patungan, UserSlot, UserTicket
+            from sqlalchemy import select
+
+            new_patungan = Patungan(
+                product_name=product_name,
+                display_name=product_name,
+                price=price,
+                total_slots=total_slots,
+                current_slots=current_slots,
+                status=status,
+                duration_hours=duration,
+                message_id=str(message.id)
+            )
+            
+            self.bot.session.add(new_patungan)
+            await self.bot.session.flush()
+            
+            # Parse Slots
+            if embed.description:
+                slot_lines = embed.description.split('\n')
+                for line in slot_lines:
+                    slot_match = re.search(r'`(\d+)\.`\s*(.+?)\s*-\s*\|\|\s*<@(\d+)>\s*\|\|\s*\((.+?)\)', line)
+                    if slot_match:
+                        s_num = int(slot_match.group(1))
+                        s_game_user = slot_match.group(2).strip()
+                        s_discord_id = slot_match.group(3)
+                        s_status_raw = slot_match.group(4).lower()
+                        
+                        s_status = 'booked'
+                        if 'paid' in s_status_raw: s_status = 'paid'
+                        elif 'waiting' in s_status_raw: s_status = 'waiting_payment'
+                        
+                        # Create Dummy Ticket & Slot logic omitted for brevity in auto-import 
+                        # (Assuming legacy sync handles full detail, here we just need Patungan to exist for .run)
+                        # But to be safe, we skip slot creation here to avoid complexity, 
+                        # or rely on sync_legacy_patungan for full restore.
+                        # For .run command, we mainly need the Patungan record.
+            
+            await self.bot.session.commit()
+            logger.info(f"Auto-imported legacy patungan: {product_name}")
+            return True
+        except Exception as e:
+            logger.error(f"Error importing single patungan: {e}")
+            return False
