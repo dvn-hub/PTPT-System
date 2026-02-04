@@ -204,17 +204,27 @@ class DaftarSlotModal(ui.Modal, title='📝 Daftar Slot'):
             self.add_item(self.roblox_user)
             self.add_item(self.display_name)
         else:
-            # Jika > 1 slot, buat input per slot (max 5 slot per modal)
-            # Format: Username, DisplayName
+            # Jika > 1 slot, buat input per slot (max 2 slot per modal)
             for i in range(1, count + 1):
-                field = ui.TextInput(
-                    label=f'Slot {i} Data',
-                    placeholder='Username, DisplayName',
+                # Username Field
+                u_field = ui.TextInput(
+                    label=f'Username Roblox (Slot {i})',
+                    placeholder='@username',
                     style=discord.TextStyle.short,
                     required=True
                 )
-                self.add_item(field)
-                self.items_dict[i] = field
+                self.add_item(u_field)
+                self.items_dict[f"u_{i}"] = u_field
+                
+                # Display Name Field
+                d_field = ui.TextInput(
+                    label=f'Display Name (Slot {i})',
+                    placeholder='Nickname in-game',
+                    style=discord.TextStyle.short,
+                    required=True
+                )
+                self.add_item(d_field)
+                self.items_dict[f"d_{i}"] = d_field
     
     async def on_submit(self, interaction: discord.Interaction):
         try:
@@ -230,15 +240,9 @@ class DaftarSlotModal(ui.Modal, title='📝 Daftar Slot'):
                     'display': self.display_name.value.strip()
                 })
             else:
-                for i, field in self.items_dict.items():
-                    val = field.value.strip()
-                    if ',' in val:
-                        parts = val.split(',', 1)
-                        u = parts[0].strip()
-                        d = parts[1].strip()
-                    else:
-                        u = val
-                        d = val # Default display = username if not provided
+                for i in range(1, count + 1):
+                    u = self.items_dict[f"u_{i}"].value.strip()
+                    d = self.items_dict[f"d_{i}"].value.strip()
                     slots_data.append({'username': u, 'display': d})
             
             # Get patungan info (New Model)

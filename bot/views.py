@@ -109,8 +109,9 @@ class SelectSlotCountView(ui.View):
         self.bot = bot
         self.product_name = product_name
         
-        # Limit to 5 because Modal max components = 5
-        limit = min(max_slots, 5)
+        # Limit to 2 because Modal max components = 5
+        # We need 2 fields per slot (Username + Display), so max 2 slots = 4 fields
+        limit = min(max_slots, 2)
         
         options = []
         if limit < 1:
