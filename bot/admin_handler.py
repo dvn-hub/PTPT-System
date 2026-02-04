@@ -120,6 +120,19 @@ class AdminHandler:
                 logger.error(f"Error updating panel: {e}")
                 await interaction.followup.send(f"❌ Terjadi kesalahan: {str(e)}", ephemeral=True)
 
+        @self.bot.tree.command(name="import_legacy", description="Import patungan lama dari channel list")
+        async def import_legacy(interaction: discord.Interaction):
+            # Permission check
+            user_roles = [r.id for r in interaction.user.roles]
+            allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS
+            if not any(role_id in user_roles for role_id in allowed_roles):
+                await interaction.response.send_message("❌ Access Denied", ephemeral=True)
+                return
+            
+            await interaction.response.defer(ephemeral=True)
+            count, msg = await self.bot.patungan_manager.sync_legacy_patungan(self.config.LIST_PTPT_CHANNEL_ID)
+            await interaction.followup.send(f"✅ {msg}")
+
     async def approve_payment(self, interaction: discord.Interaction, product_name: str, user: discord.Member, slots_count: int = 1):
         """
         Handle logic saat payment diapprove:
