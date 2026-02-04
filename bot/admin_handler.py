@@ -253,7 +253,8 @@ class AdminHandler:
             from database.crud import get_patungan
             patungan = await get_patungan(self.bot.session, product_name)
             if patungan:
-                patungan.current_slots = max(0, patungan.current_slots - 1)
+                if hasattr(patungan, 'current_slots'):
+                    patungan.current_slots = max(0, patungan.current_slots - 1)
             
             await self.bot.session.commit()
 
