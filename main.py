@@ -565,6 +565,10 @@ class PatunganBot(commands.Bot):
             
             await message.channel.send(f"✅ **Berhasil Update Workers ({len(new_workers)} akun):**\n`{', '.join(new_workers)}`\n\n*Note: Update ini hanya sementara sampai bot restart. Tambahkan `WC_WORKERS` di .env agar permanen.*")
 
+        # Manual Command: .setup_tutorial
+        if message.content.lower() == '.setup_tutorial':
+             await self.admin_handler.handle_setup_tutorial_command(message)
+
         await self.process_commands(message)
     
     async def on_interaction(self, interaction: discord.Interaction):
