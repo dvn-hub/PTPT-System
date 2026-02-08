@@ -394,7 +394,8 @@ class PatunganManager:
         # Fetch slots
         from sqlalchemy.orm import selectinload
         stmt_slots = select(UserSlot).where(
-            UserSlot.patungan_version == patungan.product_name
+            UserSlot.patungan_version == patungan.product_name,
+            UserSlot.slot_status.in_(['booked', 'waiting_payment', 'paid'])
         ).options(selectinload(UserSlot.ticket)).order_by(UserSlot.slot_number)
         result_slots = await self.bot.session.execute(stmt_slots)
         slots = result_slots.scalars().all()
@@ -985,28 +986,47 @@ class PatunganManager:
             # Get all unpaid slots for this patungan
             unpaid_slots = await get_unpaid_slots(self.bot.session, version)
             
+            if not unpaid_slots:
+                return
+
             for slot in unpaid_slots:
                 # Update slot status to kicked
                 slot.slot_status = 'kicked'
-                
-                # Decrement patungan slot count
-                patungan = await get_patungan(self.bot.session, version)
-                if patungan:
-                    patungan.current_slots = max(0, patungan.current_slots - 1)
+                slot.slot_number = 0 # Remove from sequence
                 
                 # Send notification
                 await self.send_kick_notification(slot)
             
+            # Re-order remaining slots (Shift up)
+            from database.models import UserSlot
+            from sqlalchemy import select
+            
+            stmt = select(UserSlot).where(
+                UserSlot.patungan_version == version,
+                UserSlot.slot_status.in_(['booked', 'waiting_payment', 'paid'])
+            ).order_by(UserSlot.slot_number)
+            
+            result = await self.bot.session.execute(stmt)
+            active_slots = result.scalars().all()
+            
+            # Re-assign numbers
+            for i, slot in enumerate(active_slots, 1):
+                slot.slot_number = i
+            
+            # Update patungan current_slots
+            patungan = await get_patungan(self.bot.session, version)
+            if patungan:
+                patungan.current_slots = len(active_slots)
+                
+                # Reset deadline if slots < 10
+                if patungan.current_slots < 10:
+                    patungan.deadline_start = None
+                    patungan.deadline_end = None
+
             await self.bot.session.commit()
             
             # Update list channel
             await self.update_list_channel()
-            
-            # Reset deadline if slots < 10
-            if patungan and patungan.current_slots < 10:
-                patungan.deadline_start = None
-                patungan.deadline_end = None
-                await self.bot.session.commit()
             
             logger.info(f"Processed deadline kicks for {version}")
             

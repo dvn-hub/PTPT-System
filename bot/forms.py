@@ -281,7 +281,10 @@ class DaftarSlotModal(ui.Modal, title='📝 Daftar Slot'):
                 return
             
             # Check slots availability (Count existing slots)
-            stmt_count = select(func.count(UserSlot.id)).where(UserSlot.patungan_version == product_name)
+            stmt_count = select(func.count(UserSlot.id)).where(
+                UserSlot.patungan_version == product_name,
+                UserSlot.slot_status.in_(['booked', 'waiting_payment', 'paid'])
+            )
             res_count = await self.bot.session.execute(stmt_count)
             current_slots = res_count.scalar() or 0
 
