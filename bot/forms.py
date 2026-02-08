@@ -273,7 +273,7 @@ class DaftarSlotModal(ui.Modal, title='📝 Daftar Slot'):
                     ephemeral=True
                 )
                 return
-            if patungan.status != 'open':
+            if patungan.status not in ['open', 'running']:
                 await interaction.response.send_message(
                     f"{Emojis.WARNING} Patungan {product_name} sedang {patungan.status}",
                     ephemeral=True
