@@ -2,7 +2,7 @@
 import discord
 from discord import ui
 from bot.forms import CreatePatunganForm, DaftarSlotModal, SetPaymentImageForm, PaymentForm
-from database.crud import get_user_slots, update_payment_status, get_slot, get_available_patungans, get_all_patungans
+from database.crud import get_user_slots, update_payment_status, get_slot, get_available_patungans, get_all_patungans, get_ticket_by_channel
 from config import Config, Emojis
 from datetime import datetime
 import logging
@@ -83,11 +83,31 @@ class MainTicketView(ui.View):
     async def payment_button(self, interaction: discord.Interaction, button: ui.Button):
         """Show payment method selection"""
         # Calculate total amount for display
-        from database.crud import get_user_slots
-        # Get slots for this user in this channel (ticket)
-        # Since we can't easily filter by channel here without more queries, we'll just get booked slots
-        # Ideally we should filter by ticket_id, but for UI display this is acceptable
-        slots = await get_user_slots(self.bot.session, str(interaction.user.id), status='booked')
+        from database.models import UserSlot
+        from sqlalchemy import select
+
+        # Try to get slots specific to this ticket channel first
+        ticket = await get_ticket_by_channel(self.bot.session, str(interaction.channel_id))
+        slots = []
+        
+        if ticket:
+             stmt = select(UserSlot).where(
+                UserSlot.ticket_id == ticket.id,
+                UserSlot.slot_status == 'booked'
+            )
+             result = await self.bot.session.execute(stmt)
+             slots = result.scalars().all()
+        else:
+             # Fallback to global user slots if not in a ticket channel (unlikely for this view)
+             slots = await get_user_slots(self.bot.session, str(interaction.user.id), status='booked')
+
+        if not slots:
+            await interaction.response.send_message(
+                f"{Emojis.WARNING} **Anda belum terdaftar di slot manapun atau tagihan sudah lunas.**\nSilakan klik tombol **📝 Daftar Slot** terlebih dahulu jika belum mendaftar.",
+                ephemeral=True
+            )
+            return
+
         total_amount = sum(s.locked_price for s in slots)
         
         view = PaymentMethodView(self.bot, total_amount)
