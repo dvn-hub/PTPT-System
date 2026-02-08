@@ -6,7 +6,7 @@ from config import Config, Emojis
 from database.models import UserSlot
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-from bot.views import MainTicketView, TicketPanelView, RatingView, TutorialView
+from bot.views import MainTicketView, TicketPanelView, RatingView
 
 logger = logging.getLogger(__name__)
 
@@ -331,47 +331,57 @@ class AdminHandler:
             await message.channel.send(f"❌ Channel Tutorial tidak ditemukan (ID: {self.config.TUTORIAL_CHANNEL_ID})")
             return
 
-        # Create Embed
-        embed = discord.Embed(
+        # Optional: Purge old messages to keep it clean
+        try:
+            await channel.purge(limit=10)
+        except:
+            pass
+
+        # Create Multiple Embeds (Cards style)
+        embeds = []
+
+        # 1. Header
+        embed_header = discord.Embed(
             title="📚 PANDUAN LENGKAP ORDER PTPT X8",
             description="Ikuti langkah-langkah di bawah ini untuk memesan slot Patungan (PTPT).",
             color=self.config.COLOR_GOLD
         )
+        embeds.append(embed_header)
         
-        embed.add_field(
-            name="1️⃣ BUAT TICKET",
-            value=f"• Pergi ke channel <#{self.config.OPEN_TICKET_CHANNEL_ID}>\n• Klik tombol **`🎫 Buat Ticket`**\n• Pilih produk yang tersedia (V1, V2, dll)",
-            inline=False
+        # 2. Step 1
+        embed1 = discord.Embed(
+            title="1️⃣ BUAT TICKET",
+            description=f"• Pergi ke channel <#{self.config.OPEN_TICKET_CHANNEL_ID}>\n• Klik tombol **`🎫 Buat Ticket`**\n• Pilih produk yang tersedia (V1, V2, dll)",
+            color=self.config.COLOR_INFO
         )
+        embeds.append(embed1)
         
-        embed.add_field(
-            name="2️⃣ DAFTAR SLOT",
-            value="• Masuk ke channel ticket yang baru dibuat\n• Klik tombol **`📝 Daftar Slot`**\n• Isi **Username Roblox** & **Display Name**\n• Pilih jumlah slot",
-            inline=False
+        # 3. Step 2
+        embed2 = discord.Embed(
+            title="2️⃣ DAFTAR SLOT",
+            description="• Masuk ke channel ticket yang baru dibuat\n• Klik tombol **`📝 Daftar Slot`**\n• Isi **Username Roblox** & **Display Name**\n• Pilih jumlah slot",
+            color=self.config.COLOR_INFO
         )
+        embeds.append(embed2)
         
-        embed.add_field(
-            name="3️⃣ PEMBAYARAN (PAYMENT)",
-            value="• Klik tombol **`💳 Payment`**\n• Pilih metode (QRIS / Bank)\n• Transfer nominal **PAS** (sesuai tagihan)\n• **Upload Bukti Transfer** di chat ticket",
-            inline=False
+        # 4. Step 3
+        embed3 = discord.Embed(
+            title="3️⃣ PEMBAYARAN (PAYMENT)",
+            description="• Klik tombol **`💳 Payment`**\n• Pilih metode (QRIS / Bank)\n• Transfer nominal **PAS** (sesuai tagihan)\n• **Upload Bukti Transfer** di chat ticket",
+            color=self.config.COLOR_INFO
         )
+        embeds.append(embed3)
         
-        embed.add_field(
-            name="4️⃣ VERIFIKASI",
-            value="• Tunggu Admin memverifikasi pembayaran\n• Jika valid, Bot akan memberikan Role & Akses Channel\n• Selesai! Tunggu jadwal main.",
-            inline=False
+        # 5. Step 4
+        embed4 = discord.Embed(
+            title="4️⃣ VERIFIKASI",
+            description="• Tunggu Admin memverifikasi pembayaran\n• Jika valid, Bot akan memberikan Role & Akses Channel\n• Selesai! Tunggu jadwal main.",
+            color=self.config.COLOR_SUCCESS
         )
-        
-        embed.set_footer(text="DVN Store System • Ikuti aturan agar transaksi lancar")
-        
-        view = TutorialView()
-        
-        # Optional: Purge old messages to keep it clean
-        try:
-            await channel.purge(limit=5)
-        except:
-            pass
+        embed4.set_footer(text="DVN Store System • Ikuti aturan agar transaksi lancar")
+        embeds.append(embed4)
             
-        await channel.send(embed=embed, view=view)
+        # Send all embeds in one message
+        await channel.send(embeds=embeds)
         
         await message.channel.send(f"✅ Tutorial berhasil dikirim ke {channel.mention}")
