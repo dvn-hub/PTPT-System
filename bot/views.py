@@ -633,3 +633,20 @@ class CreatePatunganWizardView(ui.View):
     async def next_step(self, interaction: discord.Interaction, button: ui.Button):
         form = CreatePatunganForm(self.bot, self.use_script, self.start_mode)
         await interaction.response.send_modal(form)
+
+class TutorialView(ui.View):
+    """Dummy view for tutorial embed"""
+    def __init__(self):
+        super().__init__(timeout=None)
+    
+    @ui.button(label='🎫 Buat Ticket', style=discord.ButtonStyle.primary, disabled=True)
+    async def dummy_ticket(self, interaction: discord.Interaction, button: ui.Button):
+        pass
+
+    @ui.button(label='📝 Daftar Slot', style=discord.ButtonStyle.success, disabled=True)
+    async def dummy_daftar(self, interaction: discord.Interaction, button: ui.Button):
+        pass
+
+    @ui.button(label='💳 Payment', style=discord.ButtonStyle.secondary, disabled=True)
+    async def dummy_payment(self, interaction: discord.Interaction, button: ui.Button):
+        pass

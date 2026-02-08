@@ -6,6 +6,7 @@ from config import Config, Emojis
 from database.models import UserSlot
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
+from bot.views import MainTicketView, TicketPanelView, RatingView, TutorialView
 
 logger = logging.getLogger(__name__)
 
@@ -158,6 +159,67 @@ class AdminHandler:
                     await interaction.followup.send(f"❌ Gagal import (Mungkin format salah atau sudah ada).", ephemeral=True)
             except Exception as e:
                 await interaction.followup.send(f"❌ Error: {str(e)}", ephemeral=True)
+
+        @self.bot.tree.command(name="setup_tutorial", description="Kirim embed tutorial order ke channel tutorial")
+        async def setup_tutorial(interaction: discord.Interaction):
+            # Permission check
+            user_roles = [r.id for r in interaction.user.roles]
+            allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS
+            if not any(role_id in user_roles for role_id in allowed_roles):
+                await interaction.response.send_message("❌ Access Denied", ephemeral=True)
+                return
+            
+            channel = self.bot.get_channel(self.config.TUTORIAL_CHANNEL_ID)
+            if not channel:
+                await interaction.response.send_message(f"❌ Channel Tutorial tidak ditemukan (ID: {self.config.TUTORIAL_CHANNEL_ID})", ephemeral=True)
+                return
+
+            await interaction.response.defer(ephemeral=True)
+            
+            # Create Embed
+            embed = discord.Embed(
+                title="📚 PANDUAN LENGKAP ORDER PTPT X8",
+                description="Ikuti langkah-langkah di bawah ini untuk memesan slot Patungan (PTPT).",
+                color=self.config.COLOR_GOLD
+            )
+            
+            embed.add_field(
+                name="1️⃣ BUAT TICKET",
+                value=f"• Pergi ke channel <#{self.config.OPEN_TICKET_CHANNEL_ID}>\n• Klik tombol **`🎫 Buat Ticket`**\n• Pilih produk yang tersedia (V1, V2, dll)",
+                inline=False
+            )
+            
+            embed.add_field(
+                name="2️⃣ DAFTAR SLOT",
+                value="• Masuk ke channel ticket yang baru dibuat\n• Klik tombol **`📝 Daftar Slot`**\n• Isi **Username Roblox** & **Display Name**\n• Pilih jumlah slot",
+                inline=False
+            )
+            
+            embed.add_field(
+                name="3️⃣ PEMBAYARAN (PAYMENT)",
+                value="• Klik tombol **`💳 Payment`**\n• Pilih metode (QRIS / Bank)\n• Transfer nominal **PAS** (sesuai tagihan)\n• **Upload Bukti Transfer** di chat ticket",
+                inline=False
+            )
+            
+            embed.add_field(
+                name="4️⃣ VERIFIKASI",
+                value="• Tunggu Admin memverifikasi pembayaran\n• Jika valid, Bot akan memberikan Role & Akses Channel\n• Selesai! Tunggu jadwal main.",
+                inline=False
+            )
+            
+            embed.set_footer(text="DVN Store System • Ikuti aturan agar transaksi lancar")
+            
+            view = TutorialView()
+            
+            # Optional: Purge old messages to keep it clean
+            try:
+                await channel.purge(limit=5)
+            except:
+                pass
+                
+            await channel.send(embed=embed, view=view)
+            
+            await interaction.followup.send(f"✅ Tutorial berhasil dikirim ke {channel.mention}", ephemeral=True)
 
     async def approve_payment(self, interaction: discord.Interaction, product_name: str, user: discord.Member, slots_count: int = 1):
         """
