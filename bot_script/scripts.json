@@ -1,1 +1,18 @@
-[]
+{
+    "DVN_ACCEPT_GIFT": "loadstring(game:HttpGet('https://raw.githubusercontent.com/dvn-hub/DVN-Fish-It/refs/heads/main/Accept%20Gift'))()",
+    "DVN_AUTO_GIFT": "loadstring(game:HttpGet('https://raw.githubusercontent.com/dvn-hub/DVN-Fish-It/refs/heads/main/Auto%20Gift'))()",
+    "WINTER_KAITUN": "loadstring(game:HttpGet(\"https://raw.githubusercontent.com/dvn-hub/DVN-Fish-It/refs/heads/main/_G.FishItConfig%20%3D%20_G.lua\"))(); script_key=\"E5ECC296CE60E2EFA78D52F20596D297\"; local s,r repeat s,r=pcall(function()return game:HttpGet(\"https://raw.githubusercontent.com/FnDXueyi/roblog/refs/heads/main/fishit-78c86024ea87c8eca577549807421962.lua\")end)task.wait(1)until s; loadstring(r)()",
+    "WINTER_DASH": "loadstring(game:HttpGet(\"https://raw.githubusercontent.com/FnDXueyi/list/refs/heads/main/game\"))()",
+    "DVN_LOG_FM": "loadstring(game:HttpGet('https://raw.githubusercontent.com/dvn-hub/DVN-Fish-It/refs/heads/main/log%20FM%20DVN.lua'))()",
+    "DVN_AUTOEXE": "loadstring(game:HttpGet('https://raw.githubusercontent.com/dvn-hub/DVN-Fish-It/refs/heads/main/log%20auto%20DVN.lua'))()",
+    "DVN_LOGGER": "loadstring(game:HttpGet('https://raw.githubusercontent.com/dvn-hub/Logger/refs/heads/main/Logger.lua'))()",
+    "ATOMIC": "script_key=\"NKQkgrRlCpitzSTWcAYqENsNPHVDAMng\";\nloadstring(game:HttpGet(\"https://raw.githubusercontent.com/bimoraa/Euphoria/refs/heads/main/loader.luau\"))()",
+    "SERAPHIN": "script_key=\"YwSQnsQEumPTuuNKwIZrdXuVRZTleznp\";\nloadstring(game:HttpGet(\"https://api.luarmor.net/files/v3/loaders/4dc9dcf99003ffd560ef9ba6ead36318.lua\"))()",
+    "CHLOE": "loadstring(game:HttpGet(\"https://raw.githubusercontent.com/MajestySkie/Chloe-X/main/Main/ChloeX\"))()",
+    "WEBHOOK_DVN": "https://discord.com/api/webhooks/1455188929824161914/ianT2aawksflHN7vmM0_Ptal1PSVGq81O89Y03eP81Y-00obrY4sY6nDwqGxvQPuS8zh",
+    "WEBHOOK_FM": "https://discord.com/api/webhooks/1466009680785707252/qnk1X9psg-APYBNQznH57QjvOKQN6iiPA5s6GldDeZuCXUS-HJf4GrPjBkN2RfAUEBHf",
+    "WEBHOOK_FISHIT": "https://discord.com/api/webhooks/1422865888390021262/76qvUPwZ_nUQedBr_q42jm_7y9ddmU34ozVE2r0W4derVkPWMTJ47bvzZvxT1bZmCb_h",
+    "WEBHOOK_MONITOR": "https://discord.com/api/webhooks/1462334004354224138/K-0liWniczeVm9uz_tQdAqss1Lw0CV9NKOJc0wbFbvBvG81wgLSIopsEM7bqwe0rxviL",
+    "WEBHOOK_REJOIN": "https://discord.com/api/webhooks/1471138893599477996/P26JJx9PCpz9K11n5_NZepDg07fjeu56J84f9vwzweWU4aTwQH8UEqikHWioKtxak4GU",
+    "WEBHOOK_EXPIRED": "https://discord.com/api/webhooks/1471139017792815247/I06eihIpk8USa91MnwJoJXW-3MOKaDPFC5-FBy87w4uOAcg7tYEICYYgfPUyKf0m5um3"
+}

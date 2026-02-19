@@ -116,25 +116,23 @@ def load_scripts():
 
     # Hardcoded Webhooks (Requested Update)
     hardcoded = {
-        "WEBHOOK_REJOIN": "https://discordapp.com/api/webhooks/1471138893599477996/P26JJx9PCpz9K11n5_NZepDg07fjeu56J84f9vwzweWU4aTwQH8UEqikHWioKtxak4GU",
-        "WEBHOOK_EXPIRED": "https://discordapp.com/api/webhooks/1471139017792815247/I06eihIpk8USa91MnwJoJXW-3MOKaDPFC5-FBy87w4uOAcg7tYEICYYgfPUyKf0m5um3",
-        
         # --- DEFAULT SCRIPTS (Biar gak error kalau JSON kosong) ---
-        "DVN_ACCEPT_GIFT": "-- Script DVN Accept Gift belum di-set di Dashboard.\nprint('DVN Accept Gift Placeholder')",
-        "DVN_FISHIT": "loadstring(game:HttpGet('https://raw.githubusercontent.com/Example/Script/main/FishIt.lua'))()",
-        "DVN_LOGGER": "-- Script Logger belum di-set.",
-        "DVN_AUTOEXE": "-- Script Auto Exe belum di-set.",
-        "DVN_LOG_FM": "-- Script Log FM belum di-set.",
-        "DVN_AUTO_GIFT": "-- Script Auto Gift belum di-set.",
-        "WINTER_KAITUN": "loadstring(game:HttpGet('https://raw.githubusercontent.com/Winter/Hub/main/Kaitun.lua'))()",
-        "WINTER_DASH": "-- Winter Dashboard belum di-set.",
-        "ATOMIC": "loadstring(game:HttpGet('https://atomic-hub.net/script'))()",
-        "SERAPHIN": "-- Seraphin Script belum di-set.",
-        "LIME": "-- Lime Script belum di-set.",
-        "CHLOE": "-- Chloe Script belum di-set.",
-        "WEBHOOK_DVN": "https://discord.com/api/webhooks/...",
-        "WEBHOOK_FISHIT": "https://discord.com/api/webhooks/...",
-        "WEBHOOK_MONITOR": "https://discord.com/api/webhooks/..."
+        "DVN_ACCEPT_GIFT": "loadstring(game:HttpGet('https://raw.githubusercontent.com/dvn-hub/DVN-Fish-It/refs/heads/main/Accept%20Gift'))()",
+        "DVN_AUTO_GIFT": "loadstring(game:HttpGet('https://raw.githubusercontent.com/dvn-hub/DVN-Fish-It/refs/heads/main/Auto%20Gift'))()",
+        "WINTER_KAITUN": 'loadstring(game:HttpGet("https://raw.githubusercontent.com/dvn-hub/DVN-Fish-It/refs/heads/main/_G.FishItConfig%20%3D%20_G.lua"))(); script_key="E5ECC296CE60E2EFA78D52F20596D297"; local s,r repeat s,r=pcall(function()return game:HttpGet("https://raw.githubusercontent.com/FnDXueyi/roblog/refs/heads/main/fishit-78c86024ea87c8eca577549807421962.lua")end)task.wait(1)until s; loadstring(r)()',
+        "WINTER_DASH": 'loadstring(game:HttpGet("https://raw.githubusercontent.com/FnDXueyi/list/refs/heads/main/game"))()',
+        "DVN_LOG_FM": "loadstring(game:HttpGet('https://raw.githubusercontent.com/dvn-hub/DVN-Fish-It/refs/heads/main/log%20FM%20DVN.lua'))()",
+        "DVN_AUTOEXE": "loadstring(game:HttpGet('https://raw.githubusercontent.com/dvn-hub/DVN-Fish-It/refs/heads/main/log%20auto%20DVN.lua'))()",
+        "DVN_LOGGER": "loadstring(game:HttpGet('https://raw.githubusercontent.com/dvn-hub/Logger/refs/heads/main/Logger.lua'))()",
+        "ATOMIC": 'script_key="NKQkgrRlCpitzSTWcAYqENsNPHVDAMng";\nloadstring(game:HttpGet("https://raw.githubusercontent.com/bimoraa/Euphoria/refs/heads/main/loader.luau"))()',
+        "SERAPHIN": 'script_key="YwSQnsQEumPTuuNKwIZrdXuVRZTleznp";\nloadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/4dc9dcf99003ffd560ef9ba6ead36318.lua"))()',
+        "CHLOE": 'loadstring(game:HttpGet("https://raw.githubusercontent.com/MajestySkie/Chloe-X/main/Main/ChloeX"))()',
+        "WEBHOOK_DVN": "https://discord.com/api/webhooks/1455188929824161914/ianT2aawksflHN7vmM0_Ptal1PSVGq81O89Y03eP81Y-00obrY4sY6nDwqGxvQPuS8zh",
+        "WEBHOOK_FM": "https://discord.com/api/webhooks/1466009680785707252/qnk1X9psg-APYBNQznH57QjvOKQN6iiPA5s6GldDeZuCXUS-HJf4GrPjBkN2RfAUEBHf",
+        "WEBHOOK_FISHIT": "https://discord.com/api/webhooks/1422865888390021262/76qvUPwZ_nUQedBr_q42jm_7y9ddmU34ozVE2r0W4derVkPWMTJ47bvzZvxT1bZmCb_h",
+        "WEBHOOK_MONITOR": "https://discord.com/api/webhooks/1462334004354224138/K-0liWniczeVm9uz_tQdAqss1Lw0CV9NKOJc0wbFbvBvG81wgLSIopsEM7bqwe0rxviL",
+        "WEBHOOK_REJOIN": "https://discord.com/api/webhooks/1471138893599477996/P26JJx9PCpz9K11n5_NZepDg07fjeu56J84f9vwzweWU4aTwQH8UEqikHWioKtxak4GU",
+        "WEBHOOK_EXPIRED": "https://discord.com/api/webhooks/1471139017792815247/I06eihIpk8USa91MnwJoJXW-3MOKaDPFC5-FBy87w4uOAcg7tYEICYYgfPUyKf0m5um3"
     }
     
     for k, v in hardcoded.items():
@@ -292,7 +290,6 @@ class ScriptDropdown(discord.ui.Select):
     def __init__(self):
         options = [
             # --- DVN SERIES ---
-            discord.SelectOption(label="DVN Fish It", value="DVN_FISHIT", description="Auto Farm Fish It Terbaru", emoji="🦈"),
             discord.SelectOption(label="DVN Logger", value="DVN_LOGGER", description="Logger Pro Feature", emoji="📝"),
             discord.SelectOption(label="DVN Log Caught AutoExe", value="DVN_AUTOEXE", description="Script Auto Execute", emoji="⚙️"),
             discord.SelectOption(label="DVN Log FM Auto Exe", value="DVN_LOG_FM", description="Auto Execute Log FM", emoji="⚙️"),
@@ -306,11 +303,11 @@ class ScriptDropdown(discord.ui.Select):
             # --- OTHER HUBS ---
             discord.SelectOption(label="Atomic Hub", value="ATOMIC", description="Atomic Script", emoji="⚛️"),
             discord.SelectOption(label="Seraphin Hub", value="SERAPHIN", description="Seraphin Script", emoji="🌑"),
-            discord.SelectOption(label="Lime Hub", value="LIME", description="Lime Script", emoji="🟢"),
             discord.SelectOption(label="Chloe Hub", value="CHLOE", description="Chloe Script", emoji="🌸"),
 
             # --- WEBHOOKS ---
             discord.SelectOption(label="Webhook DVN", value="WEBHOOK_DVN", description="Link Webhook DVN", emoji="🔗"),
+            discord.SelectOption(label="Webhook FM DVN", value="WEBHOOK_FM", description="Link Webhook FM DVN", emoji="🔗"),
             discord.SelectOption(label="Webhook Fish It", value="WEBHOOK_FISHIT", description="Link Webhook Fish It", emoji="🔗"),
             discord.SelectOption(label="Webhook Monitor", value="WEBHOOK_MONITOR", description="Link Webhook Monitor", emoji="🔗"),
             discord.SelectOption(label="Webhook Rejoin Log", value="WEBHOOK_REJOIN", description="Link Webhook Rejoin Log", emoji="🔗"),
