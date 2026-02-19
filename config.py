@@ -124,6 +124,10 @@ class Config:
         # --- WORKER DIVINE ---
         *[f"workerdivine{i:02d}" for i in range(1, 69)], "workerdivine609",
         *[f"workerdivine{i:02d}" for i in range(70, 81)],
+        "workerdivine81", "workerdivine82", "workerdivine83", "workerdivine804",
+        "workerdivine85", "workerdivine86", "workerdivine87", "workerdivine808",
+        "workerdivine89", "workerdivine90", "workerdivine91", "workerdivine92",
+        "workerdivine93", "workerdivine94", "workerdivine95", "workerdivine96",
         
         # --- AKUN LAINNYA ---
         "gajahduduxx", "cend0l_2nd", "cend0l_3", "gajahnjungkel",
