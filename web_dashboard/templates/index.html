@@ -15,22 +15,23 @@
 
     <style>
         :root {
-            --bg-main: #141419;
-            --bg-card: #1c1c24;
-            --bg-sidebar: #1c1c24;
-            --border-color: #2d2d39;
-            --accent-yellow: #f5a623;
-            --accent-red: #ff4b4b;
-            --accent-green: #2ecc71;
+            --bg-gradient: linear-gradient(135deg, #000428, #004e92);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --sidebar-bg: rgba(0, 0, 0, 0.2);
             --text-primary: #ffffff;
-            --text-secondary: #9ca3af;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --accent-color: #00d2ff;
+            --accent-green: #00ff88;
+            --accent-red: #ff4b4b;
         }
 
         body {
-            background-color: var(--bg-main);
+            background: var(--bg-gradient);
             color: var(--text-primary);
             font-family: 'Inter', sans-serif;
             overflow-x: hidden;
+            min-height: 100vh;
         }
 
         /* --- Sidebar --- */
@@ -40,8 +41,9 @@
             position: fixed;
             top: 0;
             left: 0;
-            background-color: var(--bg-sidebar);
-            border-right: 1px solid var(--border-color);
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid var(--glass-border);
             display: flex;
             flex-direction: column;
             padding: 20px;
@@ -60,7 +62,7 @@
         }
 
         .sidebar-brand i {
-            color: var(--accent-yellow);
+            color: var(--accent-color);
         }
 
         .nav-item {
@@ -80,13 +82,14 @@
 
         .nav-item:hover {
             color: var(--text-primary);
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
         }
 
         .nav-item.active {
-            background: rgba(245, 166, 35, 0.1);
+            background: rgba(255, 255, 255, 0.2);
             color: var(--text-primary);
-            border-left-color: var(--accent-yellow);
+            border-left-color: var(--accent-color);
         }
 
         /* --- Main Content --- */
@@ -110,32 +113,36 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            background: var(--bg-card);
+            background: var(--glass-bg);
+            backdrop-filter: blur(5px);
             padding: 6px 15px 6px 6px;
             border-radius: 30px;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--glass-border);
         }
 
         .user-avatar {
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            border: 2px solid var(--accent-yellow);
+            border: 2px solid var(--accent-color);
         }
 
         /* Cards */
         .custom-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
             padding: 25px;
             height: 100%;
             transition: transform 0.2s;
             position: relative;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
         }
         
         .custom-card:hover {
-            border-color: #3f3f4b;
+            border-color: var(--accent-color);
+            transform: translateY(-5px);
         }
 
         /* Stats */
@@ -152,7 +159,7 @@
             font-weight: 500;
         }
 
-        .text-yellow { color: var(--accent-yellow) !important; }
+        .text-accent { color: var(--accent-color) !important; }
         .text-green { color: var(--accent-green) !important; }
         .text-red { color: var(--accent-red) !important; }
 
@@ -160,7 +167,7 @@
         .table-dark-custom {
             --bs-table-bg: transparent;
             --bs-table-color: var(--text-secondary);
-            --bs-table-border-color: var(--border-color);
+            --bs-table-border-color: var(--glass-border);
         }
         .table-dark-custom th {
             color: var(--text-primary);
@@ -173,27 +180,26 @@
 
         /* Forms */
         .form-control-dark {
-            background: #0f0f13;
-            border: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
             color: var(--text-primary);
             border-radius: 8px;
         }
         .form-control-dark:focus {
-            background: #0f0f13;
-            border-color: var(--accent-yellow);
+            background: rgba(0, 0, 0, 0.3);
+            border-color: var(--accent-color);
             color: var(--text-primary);
             box-shadow: none;
         }
 
-        .btn-yellow {
-            background: var(--accent-yellow);
-            color: #000;
-            font-weight: 600;
-            border: none;
+        .btn-glass-primary {
+            background: rgba(0, 210, 255, 0.2);
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
             transition: 0.2s;
         }
-        .btn-yellow:hover {
-            background: #d48a0d;
+        .btn-glass-primary:hover {
+            background: var(--accent-color);
             color: #000;
         }
 
@@ -248,7 +254,7 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
-              <div class="alert alert-{{ category }} mb-4" style="background: var(--bg-card); border: 1px solid var(--border-color); color: white;">
+              <div class="alert alert-{{ category }} mb-4" style="background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: white; backdrop-filter: blur(5px);">
                   <i class="fas fa-info-circle me-2"></i> {{ message }}
               </div>
             {% endfor %}
@@ -261,10 +267,10 @@
             <!-- Row 1: Server Info -->
             <div class="col-12">
                 <div class="custom-card d-flex align-items-center gap-3">
-                    <div style="width: 60px; height: 60px; background: var(--bg-main); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid var(--border-color); font-weight: bold;">DVN</div>
+                    <div style="width: 60px; height: 60px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid var(--glass-border); font-weight: bold;">DVN</div>
                     <div>
                         <h4 class="mb-0 fw-bold">DivineBlox Community</h4>
-                        <span class="badge bg-warning text-dark">PREMIUM PLAN</span>
+                        <span class="badge bg-info text-dark">PREMIUM PLAN</span>
                     </div>
                 </div>
             </div>
@@ -272,7 +278,7 @@
             <!-- Row 2: Stats -->
             <div class="col-md-4">
                 <div class="custom-card">
-                    <div class="stat-value text-yellow">{{ pending|length }}</div>
+                    <div class="stat-value text-accent">{{ pending|length }}</div>
                     <div class="stat-label">Pending Payments</div>
                     <i class="fas fa-clock position-absolute top-0 end-0 m-4 text-secondary opacity-25 fa-2x" style="pointer-events: none;"></i>
                 </div>
@@ -310,7 +316,7 @@
             <div class="col-lg-8">
                 <div class="custom-card">
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="mb-0 fw-bold"><i class="fas fa-money-bill-wave text-yellow me-2"></i>Approval Pembayaran</h5>
+                        <h5 class="mb-0 fw-bold"><i class="fas fa-money-bill-wave text-accent me-2"></i>Approval Pembayaran</h5>
                         <span class="badge bg-secondary">{{ pending|length }} Pending</span>
                     </div>
                     
@@ -332,7 +338,7 @@
                                         <div class="fw-bold">{{ p.username }}</div>
                                         <small class="text-secondary">ID: {{ p.id }}</small>
                                     </td>
-                                    <td class="text-yellow fw-bold">Rp {{ "{:,}".format(p.amount) }}</td>
+                                    <td class="text-accent fw-bold">Rp {{ "{:,}".format(p.amount) }}</td>
                                     <td>
                                         <a href="{{ p.proof_url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
                                             <i class="fas fa-image"></i> Lihat
@@ -363,12 +369,12 @@
             <!-- Row 5: Broadcast Iklan -->
             <div class="col-lg-4">
                 <div class="custom-card">
-                    <h5 class="mb-3 fw-bold"><i class="fas fa-bullhorn text-yellow me-2"></i>Broadcast Iklan</h5>
+                    <h5 class="mb-3 fw-bold"><i class="fas fa-bullhorn text-accent me-2"></i>Broadcast Iklan</h5>
                     <form action="/save_iklan" method="POST">
                         <div class="mb-3">
                             <textarea name="isi_iklan" class="form-control form-control-dark" rows="6" placeholder="Tulis pesan iklan di sini...">{{ teks_iklan }}</textarea>
                         </div>
-                        <button type="submit" class="btn btn-yellow w-100"><i class="fas fa-save me-2"></i> Simpan Iklan</button>
+                        <button type="submit" class="btn btn-glass-primary w-100"><i class="fas fa-save me-2"></i> Simpan Iklan</button>
                     </form>
                 </div>
             </div>
@@ -380,8 +386,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // Chart Config (Dummy Data for Visuals)
-        Chart.defaults.color = '#9ca3af';
-        Chart.defaults.borderColor = '#2d2d39';
+        Chart.defaults.color = 'rgba(255, 255, 255, 0.7)';
+        Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
 
         new Chart(document.getElementById('chart1'), {
             type: 'doughnut',
@@ -389,7 +395,7 @@
                 labels: ['Paid', 'Pending', 'Rejected'],
                 datasets: [{
                     data: [{{ paid_count }}, {{ pending|length }}, {{ rejected_count }}],
-                    backgroundColor: ['#2ecc71', '#f5a623', '#ff4b4b'],
+                    backgroundColor: ['#00ff88', '#00d2ff', '#ff4b4b'],
                     borderWidth: 0
                 }]
             },
@@ -403,7 +409,7 @@
                 datasets: [{
                     label: 'Transactions',
                     data: [12, 19, 3, 5, 2, 3, 10],
-                    backgroundColor: '#f5a623',
+                    backgroundColor: '#00d2ff',
                     borderRadius: 4
                 }]
             },
