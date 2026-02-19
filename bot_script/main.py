@@ -105,7 +105,12 @@ def load_scripts():
     if os.path.exists(path):
         try:
             with open(path, 'r', encoding='utf-8') as f:
-                scripts = json.load(f)
+                data = json.load(f)
+                if isinstance(data, dict):
+                    scripts = data
+                else:
+                    print("⚠️ scripts.json format salah (List), auto-reset ke Dictionary.")
+                    scripts = {}
         except Exception as e:
             print(f"❌ Error loading scripts.json: {e}")
 

@@ -134,13 +134,22 @@ def save_iklan():
 @app.route('/save_script', methods=['POST'])
 def save_script():
     if not session.get('logged_in'): return redirect('/')
-    # Ambil data dari form (misal script untuk Blox Fruit)
-    updated_data = [
-        {"game": "Blox Fruit", "script": request.form.get('script_blox')},
-        {"game": "Pet Simulator", "script": request.form.get('script_pet')}
-    ]
+    
+    # Load data lama dulu biar gak ilang
+    current_data = {}
+    if os.path.exists(FILE_SCRIPT):
+        try:
+            with open(FILE_SCRIPT, 'r') as f:
+                data = json.load(f)
+                if isinstance(data, dict): current_data = data
+        except: pass
+
+    # Update data (Simpan sebagai Dictionary)
+    if request.form.get('script_blox'): current_data["Blox Fruit"] = request.form.get('script_blox')
+    if request.form.get('script_pet'): current_data["Pet Simulator"] = request.form.get('script_pet')
+
     with open(FILE_SCRIPT, 'w') as f:
-        json.dump(updated_data, f, indent=4)
+        json.dump(current_data, f, indent=4)
     return redirect(url_for('index'))
 
 @app.route('/approve/<int:id>', methods=['POST'])
