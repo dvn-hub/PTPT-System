@@ -91,6 +91,14 @@ def index():
     # Ambil daftar custom commands
     commands = conn.execute("SELECT * FROM custom_commands ORDER BY created_at DESC").fetchall()
 
+    # Hitung Omzet Real (Total uang masuk status PAID)
+    omzet_res = conn.execute("SELECT SUM(amount) FROM payment_records WHERE payment_status='PAID'").fetchone()
+    omzet = omzet_res[0] if omzet_res[0] else 0
+
+    # Hitung Statistik untuk Chart
+    paid_count = conn.execute("SELECT COUNT(*) FROM payment_records WHERE payment_status='PAID'").fetchone()[0]
+    rejected_count = conn.execute("SELECT COUNT(*) FROM payment_records WHERE payment_status='REJECTED'").fetchone()[0]
+
     # Baca file iklan
     teks_iklan = ""
     if os.path.exists(FILE_PROMO):
@@ -101,7 +109,9 @@ def index():
                            commands=commands, 
                            teks_iklan=teks_iklan, 
                            admin=session,
-                           omzet=0) #
+                           omzet=omzet,
+                           paid_count=paid_count,
+                           rejected_count=rejected_count)
 
 # --- FITUR EDIT IKLAN ---
 @app.route('/save_iklan', methods=['POST'])

@@ -388,7 +388,7 @@
             data: {
                 labels: ['Paid', 'Pending', 'Rejected'],
                 datasets: [{
-                    data: [120, {{ pending|length }}, 5],
+                    data: [{{ paid_count }}, {{ pending|length }}, {{ rejected_count }}],
                     backgroundColor: ['#2ecc71', '#f5a623', '#ff4b4b'],
                     borderWidth: 0
                 }]
