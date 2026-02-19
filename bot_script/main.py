@@ -117,7 +117,24 @@ def load_scripts():
     # Hardcoded Webhooks (Requested Update)
     hardcoded = {
         "WEBHOOK_REJOIN": "https://discordapp.com/api/webhooks/1471138893599477996/P26JJx9PCpz9K11n5_NZepDg07fjeu56J84f9vwzweWU4aTwQH8UEqikHWioKtxak4GU",
-        "WEBHOOK_EXPIRED": "https://discordapp.com/api/webhooks/1471139017792815247/I06eihIpk8USa91MnwJoJXW-3MOKaDPFC5-FBy87w4uOAcg7tYEICYYgfPUyKf0m5um3"
+        "WEBHOOK_EXPIRED": "https://discordapp.com/api/webhooks/1471139017792815247/I06eihIpk8USa91MnwJoJXW-3MOKaDPFC5-FBy87w4uOAcg7tYEICYYgfPUyKf0m5um3",
+        
+        # --- DEFAULT SCRIPTS (Biar gak error kalau JSON kosong) ---
+        "DVN_ACCEPT_GIFT": "-- Script DVN Accept Gift belum di-set di Dashboard.\nprint('DVN Accept Gift Placeholder')",
+        "DVN_FISHIT": "loadstring(game:HttpGet('https://raw.githubusercontent.com/Example/Script/main/FishIt.lua'))()",
+        "DVN_LOGGER": "-- Script Logger belum di-set.",
+        "DVN_AUTOEXE": "-- Script Auto Exe belum di-set.",
+        "DVN_LOG_FM": "-- Script Log FM belum di-set.",
+        "DVN_AUTO_GIFT": "-- Script Auto Gift belum di-set.",
+        "WINTER_KAITUN": "loadstring(game:HttpGet('https://raw.githubusercontent.com/Winter/Hub/main/Kaitun.lua'))()",
+        "WINTER_DASH": "-- Winter Dashboard belum di-set.",
+        "ATOMIC": "loadstring(game:HttpGet('https://atomic-hub.net/script'))()",
+        "SERAPHIN": "-- Seraphin Script belum di-set.",
+        "LIME": "-- Lime Script belum di-set.",
+        "CHLOE": "-- Chloe Script belum di-set.",
+        "WEBHOOK_DVN": "https://discord.com/api/webhooks/...",
+        "WEBHOOK_FISHIT": "https://discord.com/api/webhooks/...",
+        "WEBHOOK_MONITOR": "https://discord.com/api/webhooks/..."
     }
     
     for k, v in hardcoded.items():
