@@ -85,19 +85,27 @@ def index():
     if not session.get('logged_in'): return render_template('login.html')
     conn = get_db()
     
-    # Ambil omzet dan data lainnya
-    pending = conn.execute("SELECT * FROM payment_records WHERE payment_status='PENDING'").fetchall()
-    
-    # Ambil daftar custom commands
-    commands = conn.execute("SELECT * FROM custom_commands ORDER BY created_at DESC").fetchall()
+    try:
+        # Ambil omzet dan data lainnya
+        pending = conn.execute("SELECT * FROM payment_records WHERE payment_status='PENDING'").fetchall()
+        
+        # Ambil daftar custom commands
+        commands = conn.execute("SELECT * FROM custom_commands ORDER BY created_at DESC").fetchall()
 
-    # Hitung Omzet Real (Total uang masuk status PAID)
-    omzet_res = conn.execute("SELECT SUM(amount) FROM payment_records WHERE payment_status='PAID'").fetchone()
-    omzet = omzet_res[0] if omzet_res[0] else 0
+        # Hitung Omzet Real (Total uang masuk status PAID)
+        omzet_res = conn.execute("SELECT SUM(amount) FROM payment_records WHERE payment_status='PAID'").fetchone()
+        omzet = omzet_res[0] if omzet_res and omzet_res[0] else 0
 
-    # Hitung Statistik untuk Chart
-    paid_count = conn.execute("SELECT COUNT(*) FROM payment_records WHERE payment_status='PAID'").fetchone()[0]
-    rejected_count = conn.execute("SELECT COUNT(*) FROM payment_records WHERE payment_status='REJECTED'").fetchone()[0]
+        # Hitung Statistik untuk Chart
+        paid_count = conn.execute("SELECT COUNT(*) FROM payment_records WHERE payment_status='PAID'").fetchone()[0]
+        rejected_count = conn.execute("SELECT COUNT(*) FROM payment_records WHERE payment_status='REJECTED'").fetchone()[0]
+    except sqlite3.OperationalError:
+        # Jika tabel belum ada, set default value biar gak error 500
+        pending = []
+        commands = []
+        omzet = 0
+        paid_count = 0
+        rejected_count = 0
 
     # Baca file iklan
     teks_iklan = ""
