@@ -1,240 +1,321 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Admin - DivineBlox</title>
+    <title>DivineBlox - Admin Dashboard</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
         :root {
-            --bg-dark: #020c1b;
-            --bg-gradient: linear-gradient(135deg, #020c1b 0%, #0a192f 100%);
-            --bg-card: rgba(17, 34, 64, 0.75);
-            --bg-sidebar: rgba(10, 25, 47, 0.95);
-            --border-color: #1e3a5f;
-            --text-primary: #e6f1ff;
-            --text-secondary: #8892b0;
-            --accent-cyan: #64ffda;
-            --accent-red: #ff5f57;
+            --bg-main: #141419;
+            --bg-card: #1c1c24;
+            --bg-sidebar: #1c1c24;
+            --border-color: #2d2d39;
+            --accent-yellow: #f5a623;
+            --accent-red: #ff4b4b;
+            --accent-green: #2ecc71;
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
         }
 
         body {
-            background: var(--bg-gradient);
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-main);
             color: var(--text-primary);
-            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
             overflow-x: hidden;
         }
 
-        /* Sidebar Styling */
+        /* --- Sidebar --- */
         .sidebar {
             width: 260px;
             height: 100vh;
             position: fixed;
             top: 0;
             left: 0;
-            background: var(--bg-sidebar);
+            background-color: var(--bg-sidebar);
             border-right: 1px solid var(--border-color);
-            backdrop-filter: blur(10px);
-            padding: 25px 20px;
             display: flex;
             flex-direction: column;
+            padding: 20px;
             z-index: 1000;
-            transition: all 0.3s ease;
         }
 
         .sidebar-brand {
-            font-size: 1.4rem;
-            font-weight: 700;
+            font-size: 1.25rem;
+            font-weight: 800;
             color: var(--text-primary);
-            margin-bottom: 40px;
             display: flex;
             align-items: center;
             gap: 10px;
+            margin-bottom: 30px;
+            letter-spacing: 0.5px;
         }
 
-        .nav-link {
-            color: var(--text-secondary);
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            transition: all 0.3s ease;
+        .sidebar-brand i {
+            color: var(--accent-yellow);
+        }
+
+        .nav-item {
             display: flex;
             align-items: center;
             gap: 12px;
+            padding: 12px 15px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
             font-weight: 500;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+            margin-bottom: 5px;
         }
 
-        .nav-link:hover, .nav-link.active {
-            background: rgba(100, 255, 218, 0.1);
-            color: var(--accent-cyan);
-            transform: translateX(5px);
+        .nav-item:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.03);
         }
 
-        .nav-link i { width: 20px; text-align: center; }
-
-        .sidebar-footer {
-            margin-top: auto;
-            padding-top: 20px;
-            border-top: 1px solid var(--border-color);
+        .nav-item.active {
+            background: rgba(245, 166, 35, 0.1);
+            color: var(--text-primary);
+            border-left-color: var(--accent-yellow);
         }
 
-        /* Main Content */
-        .main-content {
+        /* --- Main Content --- */
+        .main-wrapper {
             margin-left: 260px;
             padding: 30px 40px;
         }
 
-        /* Top Header */
-        .top-header {
+        /* Top Navbar */
+        .top-navbar {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             align-items: center;
+            gap: 25px;
             margin-bottom: 40px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid var(--border-color);
         }
 
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            background: var(--bg-card);
-            padding: 8px 20px;
-            border-radius: 50px;
-            border: 1px solid var(--border-color);
-        }
-
-        /* Cards */
-        .glass-card {
-            background: var(--bg-card);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 10px 30px -10px rgba(2, 12, 27, 0.7);
-            transition: transform 0.3s ease;
-        }
-
-        .glass-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--accent-cyan);
-        }
-
-        .card-title {
-            color: var(--accent-cyan);
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 20px;
-            font-weight: 600;
+        .user-badge {
             display: flex;
             align-items: center;
             gap: 10px;
+            background: var(--bg-card);
+            padding: 6px 15px 6px 6px;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
         }
 
-        /* Form Elements */
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-yellow);
+        }
+
+        /* Cards */
+        .custom-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            height: 100%;
+            transition: transform 0.2s;
+        }
+        
+        .custom-card:hover {
+            border-color: #3f3f4b;
+        }
+
+        /* Stats */
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .text-yellow { color: var(--accent-yellow) !important; }
+        .text-green { color: var(--accent-green) !important; }
+        .text-red { color: var(--accent-red) !important; }
+
+        /* Tables */
+        .table-dark-custom {
+            --bs-table-bg: transparent;
+            --bs-table-color: var(--text-secondary);
+            --bs-table-border-color: var(--border-color);
+        }
+        .table-dark-custom th {
+            color: var(--text-primary);
+            font-weight: 600;
+            border-bottom-width: 1px;
+        }
+        .table-dark-custom td {
+            vertical-align: middle;
+        }
+
+        /* Forms */
         .form-control-dark {
-            background: rgba(2, 12, 27, 0.5);
+            background: #0f0f13;
             border: 1px solid var(--border-color);
             color: var(--text-primary);
             border-radius: 8px;
         }
         .form-control-dark:focus {
-            background: rgba(2, 12, 27, 0.8);
-            border-color: var(--accent-cyan);
+            background: #0f0f13;
+            border-color: var(--accent-yellow);
             color: var(--text-primary);
-            box-shadow: 0 0 0 2px rgba(100, 255, 218, 0.1);
+            box-shadow: none;
         }
 
-        /* Table */
-        .table-glass { color: var(--text-secondary); }
-        .table-glass th, .table-glass td {
-            border-color: var(--border-color);
-            background: transparent;
-            color: var(--text-primary);
-            padding: 12px;
+        .btn-yellow {
+            background: var(--accent-yellow);
+            color: #000;
+            font-weight: 600;
+            border: none;
+            transition: 0.2s;
+        }
+        .btn-yellow:hover {
+            background: #d48a0d;
+            color: #000;
         }
 
-        .avatar {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            border: 2px solid var(--accent-cyan);
-        }
-
-        /* Buttons */
-        .btn-action {
-            background: rgba(100, 255, 218, 0.1);
-            color: var(--accent-cyan);
-            border: 1px solid var(--accent-cyan);
-            transition: all 0.3s;
-        }
-        .btn-action:hover {
-            background: var(--accent-cyan);
-            color: var(--bg-dark);
-        }
-
-        /* Responsive */
+        /* Responsive Adjustments */
         @media (max-width: 992px) {
-            .sidebar { transform: translateX(-100%); }
-            .main-content { margin-left: 0; padding: 20px; }
+            .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+            .main-wrapper { margin-left: 0; padding: 20px; }
         }
     </style>
 </head>
 <body>
 
     <!-- Sidebar -->
-    <div class="sidebar">
+    <aside class="sidebar">
         <div class="sidebar-brand">
-            <i class="fas fa-rocket text-info"></i> DivineBlox
+            <i class="fas fa-rocket"></i> DIVINEBLOX
         </div>
-        <nav class="nav flex-column">
-            <a href="#" class="nav-link active"><i class="fas fa-th-large"></i> Dashboard</a>
-            <a href="#" class="nav-link"><i class="fas fa-money-bill-wave"></i> Approval Pembayaran</a>
-            <a href="#" class="nav-link"><i class="fas fa-ad"></i> Broadcast Iklan</a>
-            <a href="#" class="nav-link"><i class="fas fa-terminal"></i> Custom Commands</a>
+
+        <nav class="nav flex-column flex-grow-1">
+            <a href="#" class="nav-item active"><i class="fas fa-home"></i> Home</a>
+            <a href="#" class="nav-item"><i class="fas fa-layer-group"></i> Panels</a>
+            <a href="#" class="nav-item"><i class="fas fa-file-code"></i> Templates</a>
+            <a href="#" class="nav-item"><i class="fas fa-history"></i> Ticket History</a>
+            <a href="#" class="nav-item"><i class="fas fa-terminal"></i> Custom Commands</a>
+            <a href="#" class="nav-item"><i class="fas fa-chart-bar"></i> Statistics</a>
+            <a href="#" class="nav-item"><i class="fas fa-cog"></i> Settings</a>
         </nav>
-        <div class="sidebar-footer">
-            <a href="/logout" class="nav-link text-danger"><i class="fas fa-sign-out-alt"></i> Logout</a>
-        </div>
-    </div>
+
+        <a href="/logout" class="nav-item text-danger mt-auto">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </aside>
 
     <!-- Main Content -->
-    <div class="main-content">
-        <!-- Top Header -->
-        <div class="top-header">
-            <h4 class="m-0 fw-bold text-white">Panels Manager</h4>
-            <div class="user-profile">
-                <img src="{{ admin.avatar }}" class="avatar">
-                <span class="fw-bold small">{{ admin.username }}</span>
-                <a href="/logout" class="btn btn-sm btn-danger rounded-pill ms-2" style="font-size: 0.7rem;"><i class="fas fa-power-off"></i></a>
+    <main class="main-wrapper">
+        
+        <!-- Top Navbar -->
+        <div class="top-navbar">
+            <div class="user-badge">
+                <img src="{{ admin.avatar }}" class="user-avatar">
+                <span style="font-size: 0.9rem; font-weight: 600;">{{ admin.username }}</span>
             </div>
+        </div>
+
+        <!-- Header -->
+        <div class="mb-4">
+            <h1 class="fw-bold">Dashboard</h1>
+            <p class="text-secondary">Overview of your server data and statistics.</p>
         </div>
 
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
-              <div class="alert alert-{{ category }} glass-card py-2 mb-4">{{ message }}</div>
+              <div class="alert alert-{{ category }} mb-4" style="background: var(--bg-card); border: 1px solid var(--border-color); color: white;">
+                  <i class="fas fa-info-circle me-2"></i> {{ message }}
+              </div>
             {% endfor %}
           {% endif %}
         {% endwith %}
 
-        <div class="row">
-            <!-- Kolom Kiri (8 Grid) -->
+        <!-- Grid Layout -->
+        <div class="row g-4">
+            
+            <!-- Row 1: Server Info -->
+            <div class="col-12">
+                <div class="custom-card d-flex align-items-center gap-3">
+                    <div style="width: 60px; height: 60px; background: var(--bg-main); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid var(--border-color); font-weight: bold;">DVN</div>
+                    <div>
+                        <h4 class="mb-0 fw-bold">DivineBlox Community</h4>
+                        <span class="badge bg-warning text-dark">PREMIUM PLAN</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Stats -->
+            <div class="col-md-4">
+                <div class="custom-card">
+                    <div class="stat-value text-yellow">{{ pending|length }}</div>
+                    <div class="stat-label">Pending Payments</div>
+                    <i class="fas fa-clock position-absolute top-0 end-0 m-4 text-secondary opacity-25 fa-2x"></i>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="custom-card">
+                    <div class="stat-value text-green">{{ commands|length }}</div>
+                    <div class="stat-label">Custom Commands</div>
+                    <i class="fas fa-terminal position-absolute top-0 end-0 m-4 text-secondary opacity-25 fa-2x"></i>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="custom-card">
+                    <div class="stat-value text-red">Rp {{ "{:,}".format(omzet) }}</div>
+                    <div class="stat-label">Total Omzet</div>
+                    <i class="fas fa-wallet position-absolute top-0 end-0 m-4 text-secondary opacity-25 fa-2x"></i>
+                </div>
+            </div>
+
+            <!-- Row 3: Charts -->
+            <div class="col-md-6">
+                <div class="custom-card">
+                    <h6 class="mb-3 fw-bold">Ticket Distribution</h6>
+                    <div style="height: 200px;"><canvas id="chart1"></canvas></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="custom-card">
+                    <h6 class="mb-3 fw-bold">Weekly Activity</h6>
+                    <div style="height: 200px;"><canvas id="chart2"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Row 4: Payment Approval Table -->
             <div class="col-lg-8">
-                <!-- Card 1: Approval Pembayaran -->
-                <div class="glass-card">
-                    <div class="card-title"><i class="fas fa-check-circle"></i> Approval Pembayaran</div>
+                <div class="custom-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="mb-0 fw-bold"><i class="fas fa-money-bill-wave text-yellow me-2"></i>Approval Pembayaran</h5>
+                        <span class="badge bg-secondary">{{ pending|length }} Pending</span>
+                    </div>
+                    
                     {% if pending %}
                     <div class="table-responsive">
-                        <table class="table table-glass align-middle">
+                        <table class="table table-dark-custom align-middle">
                             <thead>
-                                <tr class="text-uppercase small text-muted">
+                                <tr>
                                     <th>User</th>
                                     <th>Nominal</th>
                                     <th>Bukti</th>
@@ -244,15 +325,22 @@
                             <tbody>
                                 {% for p in pending %}
                                 <tr>
-                                    <td class="fw-bold">{{ p.username }}</td>
-                                    <td class="text-info">Rp {{ "{:,}".format(p.amount) }}</td>
-                                    <td><a href="{{ p.proof_url }}" target="_blank" class="btn btn-sm btn-outline-light rounded-pill px-3" style="font-size: 0.8rem;"><i class="fas fa-eye me-1"></i> Bukti</a></td>
+                                    <td>
+                                        <div class="fw-bold">{{ p.username }}</div>
+                                        <small class="text-secondary">ID: {{ p.id }}</small>
+                                    </td>
+                                    <td class="text-yellow fw-bold">Rp {{ "{:,}".format(p.amount) }}</td>
+                                    <td>
+                                        <a href="{{ p.proof_url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-image"></i> Lihat
+                                        </a>
+                                    </td>
                                     <td class="text-end">
                                         <form action="/approve/{{ p.id }}" method="POST" class="d-inline">
-                                            <button class="btn btn-sm btn-success rounded-circle"><i class="fas fa-check"></i></button>
+                                            <button class="btn btn-sm btn-success"><i class="fas fa-check"></i></button>
                                         </form>
                                         <form action="/reject/{{ p.id }}" method="POST" class="d-inline">
-                                            <button class="btn btn-sm btn-danger rounded-circle"><i class="fas fa-times"></i></button>
+                                            <button class="btn btn-sm btn-danger"><i class="fas fa-times"></i></button>
                                         </form>
                                     </td>
                                 </tr>
@@ -261,41 +349,63 @@
                         </table>
                     </div>
                     {% else %}
-                    <div class="text-center py-5">
-                        <div class="mb-3">
-                            <i class="fas fa-check-circle fa-4x text-success" style="opacity: 0.5;"></i>
-                        </div>
-                        <h5 class="text-white">All Caught Up!</h5>
-                        <p class="text-muted small">Tidak ada pembayaran pending saat ini.</p>
+                    <div class="text-center py-5 text-secondary">
+                        <i class="fas fa-check-circle fa-3x mb-3 opacity-50"></i>
+                        <p>Tidak ada pembayaran pending.</p>
                     </div>
                     {% endif %}
                 </div>
+            </div>
 
-                <!-- Card 3: Broadcast Iklan -->
-                <div class="glass-card">
-                    <div class="card-title"><i class="fas fa-bullhorn"></i> Ad | Broadcast Iklan</div>
+            <!-- Row 5: Broadcast Iklan -->
+            <div class="col-lg-4">
+                <div class="custom-card">
+                    <h5 class="mb-3 fw-bold"><i class="fas fa-bullhorn text-yellow me-2"></i>Broadcast Iklan</h5>
                     <form action="/save_iklan" method="POST">
                         <div class="mb-3">
-                            <textarea name="isi_iklan" class="form-control form-control-dark" rows="5" placeholder="Tulis pesan iklan di sini...">{{ teks_iklan }}</textarea>
+                            <textarea name="isi_iklan" class="form-control form-control-dark" rows="6" placeholder="Tulis pesan iklan di sini...">{{ teks_iklan }}</textarea>
                         </div>
-                        <button type="submit" class="btn btn-action w-100 py-2 fw-bold"><i class="fas fa-lock me-2"></i> Simpan Iklan</button>
+                        <button type="submit" class="btn btn-yellow w-100"><i class="fas fa-save me-2"></i> Simpan Iklan</button>
                     </form>
                 </div>
             </div>
-
-            <!-- Kolom Kanan (4 Grid) -->
-            <div class="col-lg-4">
-                <!-- Card 2: Statistik Custom Commands -->
-                <div class="glass-card text-center py-5">
-                    <div class="display-1 fw-bold text-white mb-2">{{ commands|length }}</div>
-                    <div class="text-info text-uppercase small letter-spacing-2 fw-bold">Custom Commands</div>
-                    <div class="mt-4">
-                        <button class="btn btn-sm btn-outline-light rounded-pill px-4">Manage Commands</button>
-                    </div>
-                </div>
-            </div>
         </div>
-    </div>
+    </main>
+
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Chart Config (Dummy Data for Visuals)
+        Chart.defaults.color = '#9ca3af';
+        Chart.defaults.borderColor = '#2d2d39';
+
+        new Chart(document.getElementById('chart1'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Paid', 'Pending', 'Rejected'],
+                datasets: [{
+                    data: [120, {{ pending|length }}, 5],
+                    backgroundColor: ['#2ecc71', '#f5a623', '#ff4b4b'],
+                    borderWidth: 0
+                }]
+            },
+            options: { maintainAspectRatio: false, cutout: '70%' }
+        });
+
+        new Chart(document.getElementById('chart2'), {
+            type: 'bar',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Transactions',
+                    data: [12, 19, 3, 5, 2, 3, 10],
+                    backgroundColor: '#f5a623',
+                    borderRadius: 4
+                }]
+            },
+            options: { maintainAspectRatio: false, scales: { x: { grid: { display: false } } } }
+        });
+    </script>
 </body>
 </html>
