@@ -33,11 +33,26 @@
             from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        .alert-glass {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body class="d-flex align-items-center justify-content-center" style="height: 100vh;">
     <div class="text-center card p-5 shadow-lg login-card">
         <h2 class="text-white mb-4 fw-bold">🚀 DivineBlox Panel</h2>
+        
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-glass mb-4 p-2 small">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
         <a href="/login" class="btn btn-primary btn-lg shadow btn-discord py-3 px-4">
             <img src="https://assets-global.website-files.com/6257adef93867e56f84d310d/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png" width="30" class="me-2" style="filter: brightness(0) invert(1);">
             Login with Discord
