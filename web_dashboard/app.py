@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, url_for, g
+from flask import Flask, render_template, request, redirect, session, url_for, g, flash
 import sqlite3, os, requests, json, secrets
 from datetime import datetime
 
@@ -124,6 +124,12 @@ def save_script():
     with open(FILE_SCRIPT, 'w') as f:
         json.dump(updated_data, f, indent=4)
     return redirect(url_for('index'))
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash("Berhasil logout bang!", "success")
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
