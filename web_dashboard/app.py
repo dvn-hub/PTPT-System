@@ -125,6 +125,24 @@ def save_script():
         json.dump(updated_data, f, indent=4)
     return redirect(url_for('index'))
 
+@app.route('/approve/<int:id>', methods=['POST'])
+def approve_payment(id):
+    if not session.get('logged_in'): return redirect('/')
+    conn = get_db()
+    conn.execute("UPDATE payment_records SET payment_status='PAID' WHERE id=?", (id,))
+    conn.commit()
+    flash("Pembayaran disetujui!", "success")
+    return redirect(url_for('index'))
+
+@app.route('/reject/<int:id>', methods=['POST'])
+def reject_payment(id):
+    if not session.get('logged_in'): return redirect('/')
+    conn = get_db()
+    conn.execute("UPDATE payment_records SET payment_status='REJECTED' WHERE id=?", (id,))
+    conn.commit()
+    flash("Pembayaran ditolak!", "danger")
+    return redirect(url_for('index'))
+
 @app.route('/logout')
 def logout():
     session.clear()
