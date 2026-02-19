@@ -1,0 +1,13 @@
+# Environment Variable
+.env
+*.env
+bot_script/.env
+
+# Database
+*.db
+
+# Python
+__pycache__/
+*.pyc
+*.log
+venv/
