@@ -115,8 +115,10 @@
 </div>
 {% else %}
 <div class="text-center py-5">
-    <div class="spinner-border text-light mb-3" role="status"></div>
-    <p class="text-white-50">Memuat data stock... Jika lama, cek koneksi API.</p>
+    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+    <h5 class="text-white">Data Stock Tidak Tersedia</h5>
+    <p class="text-white-50">Gagal mengambil data dari API WinterCode. Silakan coba refresh atau cek log server.</p>
+    <a href="/stock" class="btn btn-sm btn-glass mt-2"><i class="fas fa-sync me-2"></i>Coba Lagi</a>
 </div>
 {% endif %}
 {% endblock %}

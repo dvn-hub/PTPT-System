@@ -68,36 +68,6 @@ def load_panels():
     return defaults
 
 def load_broadcasts():
-    defaults = [
-        {
-            "id": "default_1",
-            "name": "📢 General Announcement",
-            "channels": "",
-            "title": "📢 PENGUMUMAN PENTING",
-            "description": "Halo @everyone,\n\nAda informasi terbaru mengenai server DVN Store.\nSilakan cek channel informasi untuk detail lebih lanjut.",
-            "image_url": "https://cdn.discordapp.com/attachments/1452251463337377902/1456009509632737417/DVN_New.png",
-            "color": "#3498db"
-        },
-        {
-            "id": "default_2",
-            "name": "⚠️ Maintenance Mode",
-            "channels": "",
-            "title": "⚠️ SERVER MAINTENANCE",
-            "description": "Bot akan mengalami maintenance sebentar untuk peningkatan performa.\nMohon maaf atas ketidaknyamanannya.",
-            "image_url": "",
-            "color": "#f1c40f"
-        },
-        {
-            "id": "default_3",
-            "name": "🎉 Promo Spesial",
-            "channels": "",
-            "title": "🎉 PROMO SPESIAL HARI INI!",
-            "description": "Dapatkan diskon khusus untuk pembelian slot Patungan V1 & V2.\nHanya berlaku hari ini!",
-            "image_url": "",
-            "color": "#e91e63"
-        }
-    ]
-    
     if os.path.exists(FILE_BROADCASTS):
         try:
             with open(FILE_BROADCASTS, 'r', encoding='utf-8') as f:
@@ -106,7 +76,7 @@ def load_broadcasts():
                     return data
         except:
             pass
-    return defaults
+    return []
 
 # --- ROUTES AUTH (SAMA KAYAK SEBELUMNYA) ---
 @app.route('/login')
