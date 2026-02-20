@@ -193,11 +193,6 @@ def save_panel():
     
     return redirect(url_for('panel_ptpt'))
 
-@app.route('/commands')
-def custom_commands():
-    if not session.get('logged_in'): return redirect('/')
-    return render_template('base.html', admin=session) # Placeholder, nanti buat file commands.html
-
 # --- ROUTES ADMIN ACTIONS (REMOTE CONTROL) ---
 
 @app.route('/admin/actions')
