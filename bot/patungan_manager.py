@@ -1611,11 +1611,38 @@ class PatunganManager:
                         slot = res_slot.scalar_one_or_none()
                         
                         if slot:
-                            # Panggil fungsi cancel slot by number yang sudah ada di AdminHandler (jika bisa diakses)
-                            # Atau implementasi ulang logic shift slot disini (lebih aman untuk background task)
-                            # Untuk simplifikasi, kita update status jadi kicked dulu, nanti admin bisa rapikan manual atau restart bot
+                            # Capture slot number for shifting
+                            removed_slot_number = slot.slot_number
+
+                            # Update status
                             slot.slot_status = 'kicked'
+                            slot.slot_number = 0 # Remove from sequence
+                            
+                            # Shift slots (Naikkan slot di bawahnya)
+                            stmt_shift = select(UserSlot).where(
+                                UserSlot.patungan_version == product_name,
+                                UserSlot.slot_number > removed_slot_number,
+                                UserSlot.slot_status.in_(['booked', 'waiting_payment', 'paid'])
+                            ).order_by(UserSlot.slot_number)
+                            
+                            res_shift = await self.bot.session.execute(stmt_shift)
+                            slots_to_shift = res_shift.scalars().all()
+                            
+                            for s in slots_to_shift:
+                                s.slot_number -= 1
+                                
+                            # Update patungan count
+                            patungan = await get_patungan(self.bot.session, product_name)
+                            if patungan:
+                                await self.bot.session.refresh(patungan)
+                                if patungan.current_slots > 0:
+                                    patungan.current_slots -= 1
+                            
+                            await self.bot.session.commit()
                             await self.update_list_channel()
+                            logger.info(f"Remote action: Removed {username} from {product_name}")
+                        else:
+                            logger.warning(f"Remote action failed: Member {username} not found in {product_name}")
 
                     action.status = 'completed'
                     action.processed_at = datetime.now()
