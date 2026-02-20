@@ -3,7 +3,7 @@ import os
 import datetime
 import config
 from database.crud import create_user_ticket, get_ticket_by_channel, create_user_slot, create_payment_record, update_payment_status
-from database.models import UserSlot, PaymentRecord
+from database.models import UserSlot, PaymentRecord, Patungan
 import asyncio
 from sqlalchemy import select
 from api import process_data
@@ -14,6 +14,28 @@ def fmt_money(n):
     if n >= 1e9: return f"{n/1e9:.2f}B"
     if n >= 1e6: return f"{n/1e6:.2f}M"
     return f"{n:,.0f}"
+
+async def ensure_stock_product(session, name):
+    from sqlalchemy import select
+    # Truncate if too long
+    if len(name) > 100: name = name[:100]
+    
+    stmt = select(Patungan).where(Patungan.product_name == name)
+    result = await session.execute(stmt)
+    if not result.scalar_one_or_none():
+        p = Patungan(
+            product_name=name,
+            display_name=name,
+            price=0,
+            total_slots=9999,
+            status='running',
+            use_script='No',
+            start_mode='full_slot',
+            duration_hours=24
+        )
+        session.add(p)
+        await session.flush()
+    return name
 
 def create_dashboard_embed(data):
     embed = discord.Embed(
@@ -149,14 +171,17 @@ async def create_stock_ticket(bot, interaction: discord.Interaction, category: s
         
         # Create UserSlot for Stock (Agar bisa masuk database pembayaran)
         if success and ticket:
+             product_name = f"{category} - {sub_category if sub_category else ''}"
+             await ensure_stock_product(bot.session, product_name)
              await create_user_slot(
                 session=bot.session,
-                ticket_id=ticket.id,
-                patungan_version=f"{category} - {sub_category if sub_category else ''}",
+                user_id=str(user.id),
+                username=user.name,
+                ticket_channel_id=str(channel.id),
+                patungan_version=product_name,
                 slot_number=1,
                 game_username=username,
                 display_name=user.display_name,
-                slot_status='booked',
                 locked_price=0 # Harga 0 karena dinamis/belum dihitung
             )
 
@@ -329,14 +354,16 @@ class TicketView(discord.ui.View):
             
             # Create Slot Placeholder
             if success and ticket:
+                 await ensure_stock_product(self.bot.session, category)
                  await create_user_slot(
                     session=self.bot.session,
-                    ticket_id=ticket.id,
+                    user_id=str(user.id),
+                    username=user.name,
+                    ticket_channel_id=str(channel.id),
                     patungan_version=category,
                     slot_number=1,
                     game_username="Pending Input",
                     display_name=user.display_name,
-                    slot_status='booked',
                     locked_price=0
                 )
 
