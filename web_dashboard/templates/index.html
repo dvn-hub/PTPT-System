@@ -219,13 +219,11 @@
         </div>
 
         <nav class="nav flex-column flex-grow-1">
-            <a href="#" class="nav-item active"><i class="fas fa-home"></i> Home</a>
-            <a href="#" class="nav-item"><i class="fas fa-layer-group"></i> Panels</a>
-            <a href="#" class="nav-item"><i class="fas fa-file-code"></i> Templates</a>
-            <a href="#" class="nav-item"><i class="fas fa-history"></i> Ticket History</a>
-            <a href="#" class="nav-item"><i class="fas fa-terminal"></i> Custom Commands</a>
-            <a href="#" class="nav-item"><i class="fas fa-chart-bar"></i> Statistics</a>
-            <a href="#" class="nav-item"><i class="fas fa-cog"></i> Settings</a>
+            <a href="#" class="nav-item active" onclick="window.scrollTo({top: 0, behavior: 'smooth'}); return false;"><i class="fas fa-home"></i> Home</a>
+            <a href="#approval" class="nav-item"><i class="fas fa-money-check-alt"></i> Approval</a>
+            <a href="#broadcast" class="nav-item"><i class="fas fa-bullhorn"></i> Broadcast</a>
+            <a href="#commands" class="nav-item"><i class="fas fa-terminal"></i> Commands</a>
+            <a href="#statistics" class="nav-item"><i class="fas fa-chart-bar"></i> Statistics</a>
         </nav>
 
         <a href="/logout" class="nav-item text-danger mt-auto">
@@ -320,7 +318,7 @@
             </div>
 
             <!-- Row 3: Charts -->
-            <div class="col-md-6">
+            <div class="col-md-6" id="statistics">
                 <div class="custom-card">
                     <h6 class="mb-3 fw-bold">Ticket Distribution</h6>
                     <div style="height: 200px;"><canvas id="chart1"></canvas></div>
@@ -334,7 +332,7 @@
             </div>
 
             <!-- Row 4: Payment Approval Table -->
-            <div class="col-lg-8">
+            <div class="col-lg-8" id="approval">
                 <div class="custom-card">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h5 class="mb-0 fw-bold"><i class="fas fa-money-bill-wave text-accent me-2"></i>Approval Pembayaran</h5>
@@ -388,7 +386,7 @@
             </div>
 
             <!-- Row 5: Broadcast Iklan -->
-            <div class="col-lg-4">
+            <div class="col-lg-4" id="broadcast">
                 <div class="custom-card">
                     <h5 class="mb-3 fw-bold"><i class="fas fa-bullhorn text-accent me-2"></i>Broadcast Iklan</h5>
                     <form action="/save_iklan" method="POST">
@@ -397,6 +395,35 @@
                         </div>
                         <button type="submit" class="btn btn-glass-primary w-100"><i class="fas fa-save me-2"></i> Simpan Iklan</button>
                     </form>
+                </div>
+            </div>
+
+            <!-- Row 6: Custom Commands List -->
+            <div class="col-12" id="commands">
+                <div class="custom-card">
+                    <h5 class="mb-3 fw-bold"><i class="fas fa-terminal text-accent me-2"></i>Custom Commands List</h5>
+                    <div class="table-responsive">
+                        <table class="table table-dark-custom align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Command Name</th>
+                                    <th>Response</th>
+                                    <th>Created At</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cmd in commands %}
+                                <tr>
+                                    <td class="text-accent fw-bold">{{ cmd.name }}</td>
+                                    <td class="text-truncate" style="max-width: 400px;">{{ cmd.response }}</td>
+                                    <td>{{ cmd.created_at.strftime('%Y-%m-%d') }}</td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="3" class="text-center text-secondary">Belum ada custom command.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -435,6 +462,20 @@
                 }]
             },
             options: { maintainAspectRatio: false, scales: { x: { grid: { display: false } } } }
+        });
+
+        // Smooth scroll handler
+        document.querySelectorAll('.nav-item').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                if(this.getAttribute('href').startsWith('#')) {
+                    e.preventDefault();
+                    document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                    this.classList.add('active');
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) targetElement.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
         });
     </script>
 </body>
