@@ -44,18 +44,14 @@
                                     {{ p.verified_at.strftime('%H:%M') }}
                                 </td>
                                 <td>
-                                    <div class="fw-bold">{{ p.slot.game_username if p.slot else 'Unknown' }}</div>
+                                    <div class="fw-bold">{{ p.slot_game_username }}</div>
                                     <small class="text-white-50">
-                                        {% if p.slot and p.slot.ticket %}
-                                            {{ p.slot.ticket.discord_username }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
+                                        {{ p.ticket_discord_username }}
                                     </small>
                                 </td>
                                 <td>
                                     <span class="badge bg-info text-dark">
-                                        {{ p.slot.patungan_version if p.slot else 'Unknown' }}
+                                        {{ p.patungan_version }}
                                     </span>
                                 </td>
                                 <td class="text-success fw-bold">
