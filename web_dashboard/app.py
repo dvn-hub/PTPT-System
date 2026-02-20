@@ -498,6 +498,12 @@ def transaction_history():
         PaymentRecord.payment_status.in_(['verified', 'paid'])
     ).order_by(PaymentRecord.verified_at.desc()).all()
     
+    # Helper class to fix Jinja2 dict.items collision
+    class TransactionGroup(dict):
+        @property
+        def items(self):
+            return self['items']
+
     # Grouping by Date (YYYY-MM-DD)
     history = {}
     for p in payments:
@@ -521,7 +527,7 @@ def transaction_history():
             date_key = dt.strftime('%Y-%m-%d')
             
             if date_key not in history:
-                history[date_key] = {'total_omzet': 0, 'items': []}
+                history[date_key] = TransactionGroup({'total_omzet': 0, 'items': []})
             
             history[date_key]['items'].append(p)
             
