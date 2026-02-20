@@ -10,6 +10,8 @@ from database.crud import (
 from database.models import SystemLog, Patungan, ActionQueue, UserSlot, UserTicket
 import asyncio
 from datetime import datetime, timedelta
+import json
+import os
 import logging
 
 logger = logging.getLogger(__name__)
@@ -22,7 +24,6 @@ class PatunganManager:
         self.config = Config()
         self.deadline_check_running = False
         self.schedule_check_running = False
-        self.action_check.start()
         
     async def setup_channels(self):
         """Setup initial channels and roles"""
