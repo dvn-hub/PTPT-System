@@ -89,6 +89,7 @@ class PaymentRecord(db.Model):
     __tablename__ = 'payment_records'
     id = db.Column(db.Integer, primary_key=True)
     slot_id = db.Column(db.Integer, db.ForeignKey('user_slots.id'), nullable=False)
+    slot = db.relationship('UserSlot', backref='payments')
     expected_amount = db.Column(db.Integer, nullable=False)
     paid_amount = db.Column(db.Integer, nullable=False)
     amount_difference = db.Column(db.Integer)

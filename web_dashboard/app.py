@@ -420,7 +420,8 @@ def get_patungan_slots(product_name):
 def manage_slots():
     if not session.get('logged_in'): return redirect('/')
     # Ambil semua patungan aktif
-    patungans = Patungan.query.filter(Patungan.status != 'archived').all()
+    # Filter stock items (total_slots 9999) agar tidak muncul di kelola slot karena approvalnya di Home
+    patungans = Patungan.query.filter(Patungan.status != 'archived', Patungan.total_slots < 9000).all()
     return render_template('manage_slots.html', admin=session, patungans=patungans)
 
 @app.route('/commands')
@@ -500,6 +501,9 @@ def transaction_history():
     # Grouping by Date (YYYY-MM-DD)
     history = {}
     for p in payments:
+        # Skip orphaned payments (slot deleted)
+        if not p.slot: continue
+
         # Fallback jika verified_at kosong (pakai detected_at atau now)
         dt = p.verified_at or p.detected_at or datetime.now()
         
