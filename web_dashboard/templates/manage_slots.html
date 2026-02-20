@@ -57,54 +57,26 @@
                         {% endif %}
                     </td>
                     <td class="text-end">
-                        <button class="btn btn-sm btn-glass" data-bs-toggle="modal" data-bs-target="#detailModal{{ p.id }}">
-                            <i class="fas fa-list me-1"></i> Detail
+                        <button class="btn btn-sm btn-glass" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ p.id }}" aria-expanded="false" onclick="loadSlotDetails('{{ p.product_name }}', '{{ p.id }}')">
+                            <i class="fas fa-chevron-down me-1"></i> Detail
                         </button>
                     </td>
                 </tr>
-
-                <!-- Modal Detail Slot -->
-                <div class="modal fade" id="detailModal{{ p.id }}" tabindex="-1">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content glass-card border-0">
-                            <div class="modal-header border-bottom border-secondary">
-                                <h5 class="modal-title">Detail Slot: {{ p.product_name }}</h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-glass align-middle">
-                                        <thead>
-                                            <tr>
-                                                <th>No</th>
-                                                <th>Username</th>
-                                                <th>Display Name</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for slot in p.slots|sort(attribute='slot_number') %}
-                                            <tr>
-                                                <td><span class="badge bg-secondary">{{ slot.slot_number }}</span></td>
-                                                <td>{{ slot.game_username }}</td>
-                                                <td>{{ slot.display_name }}</td>
-                                                <td>
-                                                    {% if slot.slot_status == 'paid' %}<span class="badge bg-success">PAID</span>
-                                                    {% elif slot.slot_status == 'booked' %}<span class="badge bg-warning text-dark">BOOKED</span>
-                                                    {% elif slot.slot_status == 'waiting_payment' %}<span class="badge bg-info">WAITING</span>
-                                                    {% else %}<span class="badge bg-secondary">{{ slot.slot_status }}</span>{% endif %}
-                                                </td>
-                                            </tr>
-                                            {% else %}
-                                            <tr><td colspan="4" class="text-center text-white-50">Belum ada peserta.</td></tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
+                <!-- Collapsible Row for Details -->
+                <tr>
+                    <td colspan="7" class="p-0 border-0">
+                        <div class="collapse" id="collapse{{ p.id }}">
+                            <div class="p-3" style="background: rgba(0,0,0,0.2); box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+                                <div id="slots-container-{{ p.id }}">
+                                    <div class="text-center text-white-50 py-3">
+                                        <div class="spinner-border spinner-border-sm text-info mb-2" role="status"></div>
+                                        <div>Memuat data slot terbaru...</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
+                    </td>
+                </tr>
                 {% else %}
                 <tr>
                     <td colspan="7" class="text-center py-4 text-white-50">Belum ada patungan aktif.</td>
@@ -114,4 +86,69 @@
         </table>
     </div>
 </div>
+
+<script>
+function loadSlotDetails(productName, id) {
+    const container = document.getElementById(`slots-container-${id}`);
+    
+    // Reset content to loading state on every click to ensure freshness
+    container.innerHTML = `
+        <div class="text-center text-white-50 py-3">
+            <div class="spinner-border spinner-border-sm text-info mb-2" role="status"></div>
+            <div>Memuat data slot terbaru...</div>
+        </div>
+    `;
+
+    fetch(`/admin/get_patungan_slots/${productName}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.length === 0) {
+                container.innerHTML = '<div class="text-center text-white-50 py-3">Belum ada peserta di slot ini.</div>';
+                return;
+            }
+
+            let html = `
+                <div class="table-responsive">
+                    <table class="table table-sm table-glass align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">No</th>
+                                <th>Username</th>
+                                <th>Display Name</th>
+                                <th class="text-end">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            data.forEach(slot => {
+                let badge = '';
+                if (slot.status === 'paid') badge = '<span class="badge bg-success">PAID</span>';
+                else if (slot.status === 'booked') badge = '<span class="badge bg-warning text-dark">BOOKED</span>';
+                else if (slot.status === 'waiting_payment') badge = '<span class="badge bg-info">WAITING</span>';
+                else badge = `<span class="badge bg-secondary">${slot.status.toUpperCase()}</span>`;
+
+                html += `
+                    <tr>
+                        <td><span class="badge bg-secondary">${slot.slot_number}</span></td>
+                        <td class="fw-bold">${slot.game_username}</td>
+                        <td class="text-white-50">${slot.display_name || '-'}</td>
+                        <td class="text-end">${badge}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            container.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            container.innerHTML = '<div class="text-center text-danger py-3"><i class="fas fa-exclamation-circle me-2"></i>Gagal memuat data slot.</div>';
+        });
+}
+</script>
 {% endblock %}

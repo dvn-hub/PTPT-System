@@ -385,6 +385,25 @@ def get_members(product_name):
     data = [{"username": s.game_username, "slot": s.slot_number} for s in slots]
     return json.dumps(data)
 
+@app.route('/admin/get_patungan_slots/<product_name>')
+def get_patungan_slots(product_name):
+    if not session.get('logged_in'): return "Unauthorized", 403
+    
+    # Ambil semua slot (termasuk yang kicked/inactive jika masih ada di DB)
+    slots = UserSlot.query.filter_by(patungan_version=product_name).order_by(UserSlot.slot_number).all()
+    
+    data = []
+    for s in slots:
+        # Hanya tampilkan slot yang valid (nomor > 0)
+        if s.slot_number > 0:
+            data.append({
+                "slot_number": s.slot_number,
+                "game_username": s.game_username,
+                "display_name": s.display_name,
+                "status": s.slot_status
+            })
+    return json.dumps(data)
+
 @app.route('/slots')
 def manage_slots():
     if not session.get('logged_in'): return redirect('/')
