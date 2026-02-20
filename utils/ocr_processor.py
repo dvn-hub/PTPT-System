@@ -51,8 +51,9 @@ class OCRProcessor:
             img_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
             gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
             
-            # Apply thresholding
-            _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
+            # Apply adaptive thresholding (Better for receipts with uneven lighting)
+            thresh = cv2.adaptiveThreshold(
+                gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
             
             # Convert back to PIL
             processed_image = Image.fromarray(thresh)
@@ -77,12 +78,12 @@ class OCRProcessor:
         """Extract amount from OCR text"""
         # Patterns to find amounts
         patterns = [
-            r'Rp\.?\s*(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)',  # Rp 1.000.000,00
-            r'IDR\.?\s*(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)',  # IDR 1.000.000,00
-            r'(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)\s*(?:rp|idr)',  # 1.000.000,00 rp
-            r'total\s*[:\.]?\s*Rp\.?\s*(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)',  # Total: Rp 1.000.000,00
-            r'nominal\s*[:\.]?\s*Rp\.?\s*(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)',  # Nominal: Rp 1.000.000,00
-            r'jumlah\s*[:\.]?\s*Rp\.?\s*(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)',  # Jumlah: Rp 1.000.000,00
+            r'Rp[\s\.]*([\d\.,]+)',  # Rp 100.000 (lebih fleksibel)
+            r'IDR[\s\.]*([\d\.,]+)',
+            r'Total[\s\W]*([\d\.,]+)',
+            r'Jumlah[\s\W]*([\d\.,]+)',
+            r'Nominal[\s\W]*([\d\.,]+)',
+            r'Transfer[\s\W]*([\d\.,]+)',
         ]
         
         for pattern in patterns:

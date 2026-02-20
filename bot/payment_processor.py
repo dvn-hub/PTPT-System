@@ -227,6 +227,14 @@ class PaymentVerificationView(ui.View):
                 await interaction.followup.send(embed=embed, ephemeral=True)
                 return
             
+            # FIX: Auto-fill paid_amount if 0 (OCR Failed) before verifying
+            from database.models import PaymentRecord
+            current_payment = await self.bot.session.get(PaymentRecord, self.payment_record.id)
+            if current_payment and current_payment.paid_amount == 0:
+                current_payment.paid_amount = current_payment.expected_amount
+                current_payment.amount_difference = 0
+                await self.bot.session.commit()
+
             # Update payment status
             await update_payment_status(
                 session=self.bot.session,

@@ -402,6 +402,11 @@ def approve_payment(id):
     if not session.get('logged_in'): return redirect('/')
     payment = PaymentRecord.query.get(id)
     if payment:
+        # FIX: Jika paid_amount 0 (OCR gagal), set ke expected_amount saat approve
+        if payment.paid_amount == 0:
+            payment.paid_amount = payment.expected_amount
+            payment.amount_difference = 0
+            
         payment.payment_status = 'verified'
         
         # Update slot status juga agar user terhitung PAID di bot
