@@ -104,3 +104,13 @@ class CustomCommand(db.Model):
     name = db.Column(db.String, unique=True)
     response = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class ActionQueue(db.Model):
+    __tablename__ = 'action_queue'
+    id = db.Column(db.Integer, primary_key=True)
+    action_type = db.Column(db.String(50), nullable=False) # create_patungan, delete_patungan, remove_member
+    payload = db.Column(db.Text, nullable=False) # JSON data
+    status = db.Column(db.String(20), default='pending') # pending, processing, completed, failed
+    created_by = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    processed_at = db.Column(db.DateTime)

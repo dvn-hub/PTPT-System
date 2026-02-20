@@ -49,18 +49,26 @@ class PatunganManager:
     
     def get_admin_dashboard_data(self):
         """Get embed and view for admin dashboard"""
+        # Default values
+        title = f"{Emojis.DISCORD_CROWN} **DVN COMMAND CENTER**"
+        desc = "Panel kontrol eksekutif untuk manajemen transaksi Patungan X8.\n\n**📋 Menu Admin:**\n⛏️ **Buat Patungan** - Membuat patungan baru (V1, V2, dll)\n⛏️ **Kelola Patungan** - Lihat status dan edit patungan\n⛏️ **Verifikasi Pembayaran** - Cek pembayaran pending"
+
+        # Load from panels.json if exists
+        try:
+            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'panels.json')
+            if os.path.exists(path):
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    if 'dashboard' in data:
+                        title = data['dashboard']['title']
+                        desc = data['dashboard']['description']
+        except Exception as e:
+            logger.error(f"Error loading panels.json: {e}")
+
         embed = discord.Embed(
-            title=f"{Emojis.DISCORD_CROWN} **DVN COMMAND CENTER**",
-            description="Panel kontrol eksekutif untuk manajemen transaksi Patungan X8.",
+            title=title,
+            description=desc,
             color=0x2C2F33 # Dark Grey / Gold-ish accent via fields
-        )
-        
-        embed.add_field(
-            name="📋 Menu Admin",
-            value=f"{Emojis.NETHERITE_PICKAXE} **Buat Patungan** - Membuat patungan baru (V1, V2, dll)\n"
-                  f"{Emojis.NETHERITE_PICKAXE} **Kelola Patungan** - Lihat status dan edit patungan\n"
-                  f"{Emojis.NETHERITE_PICKAXE} **Verifikasi Pembayaran** - Cek pembayaran pending",
-            inline=False
         )
         
         from bot.views import AdminDashboardView

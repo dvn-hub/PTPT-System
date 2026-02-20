@@ -104,6 +104,7 @@
         <div class="sidebar-brand"><i class="fas fa-rocket me-2"></i>DivineBlox</div>
         <a href="{{ url_for('index') }}" class="sidebar-link {% if request.endpoint == 'index' %}active{% endif %}"><i class="fas fa-home me-2"></i>Home</a>
         <a href="{{ url_for('panel_ptpt') }}" class="sidebar-link {% if request.endpoint == 'panel_ptpt' %}active{% endif %}"><i class="fas fa-layer-group me-2"></i>Panel PTPT</a>
+        <a href="{{ url_for('admin_actions') }}" class="sidebar-link {% if request.endpoint == 'admin_actions' %}active{% endif %}"><i class="fas fa-gamepad me-2"></i>Remote Control</a>
         <a href="{{ url_for('custom_commands') }}" class="sidebar-link {% if request.endpoint == 'custom_commands' %}active{% endif %}"><i class="fas fa-terminal me-2"></i>Custom Command</a>
         <a href="{{ url_for('manage_slots') }}" class="sidebar-link {% if request.endpoint == 'manage_slots' %}active{% endif %}"><i class="fas fa-users-cog me-2"></i>Kelola Slot</a>
         <a href="{{ url_for('transaction_history') }}" class="sidebar-link {% if request.endpoint == 'transaction_history' %}active{% endif %}"><i class="fas fa-history me-2"></i>Riwayat Transaksi</a>

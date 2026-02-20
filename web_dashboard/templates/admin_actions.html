@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="mb-4">
+    <h2 class="fw-bold">Admin Remote Control</h2>
+    <p class="text-white-50">Kendalikan bot langsung dari web panel.</p>
+</div>
+
+<div class="row g-4">
+    <!-- 1. BUAT PATUNGAN BARU -->
+    <div class="col-md-6">
+        <div class="glass-card h-100">
+            <h5 class="mb-3 fw-bold text-success"><i class="fas fa-plus-circle me-2"></i>Buat Patungan Baru</h5>
+            <form action="/admin/create_patungan" method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Nama Produk (Versi)</label>
+                    <input type="text" name="product_name" class="form-control bg-transparent text-white" placeholder="Contoh: V1, HIGGS-1M" required>
+                </div>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="form-label">Harga (Rp)</label>
+                        <input type="number" name="price" class="form-control bg-transparent text-white" placeholder="50000" required>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="form-label">Max Slot</label>
+                        <input type="number" name="max_slots" class="form-control bg-transparent text-white" value="19" required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="form-label">Durasi (Jam)</label>
+                        <input type="number" name="duration" class="form-control bg-transparent text-white" value="24" required>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="form-label">Pakai Script?</label>
+                        <select name="use_script" class="form-select bg-transparent text-white">
+                            <option value="Yes" class="text-dark">Yes</option>
+                            <option value="No" class="text-dark">No</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Mode Start</label>
+                    <select name="start_mode" class="form-select bg-transparent text-white" onchange="toggleSchedule(this.value)">
+                        <option value="full_slot" class="text-dark">Full Slot (Auto)</option>
+                        <option value="schedule" class="text-dark">Jadwal Tertentu</option>
+                    </select>
+                </div>
+                <div class="mb-3 d-none" id="scheduleInput">
+                    <label class="form-label">Jadwal (YYYY-MM-DD HH:MM)</label>
+                    <input type="datetime-local" name="schedule" class="form-control bg-transparent text-white">
+                </div>
+                <button type="submit" class="btn btn-success w-100"><i class="fas fa-paper-plane me-2"></i>Kirim Perintah</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. HAPUS MEMBER (KICK) -->
+    <div class="col-md-6">
+        <div class="glass-card h-100">
+            <h5 class="mb-3 fw-bold text-warning"><i class="fas fa-user-times me-2"></i>Kick Member</h5>
+            <form action="/admin/remove_member" method="POST" onsubmit="return confirm('Yakin ingin kick member ini?');">
+                <div class="mb-3">
+                    <label class="form-label">Pilih Patungan</label>
+                    <select name="product_name" class="form-select bg-transparent text-white" onchange="loadMembers(this.value)" required>
+                        <option value="" class="text-dark">-- Pilih Patungan --</option>
+                        {% for p in patungans %}
+                        <option value="{{ p.product_name }}" class="text-dark">{{ p.product_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Pilih Member</label>
+                    <select name="username" id="memberSelect" class="form-select bg-transparent text-white" required disabled>
+                        <option value="" class="text-dark">-- Pilih Patungan Dulu --</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-warning w-100"><i class="fas fa-gavel me-2"></i>Kick Member</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. HAPUS PATUNGAN -->
+    <div class="col-md-6">
+        <div class="glass-card h-100">
+            <h5 class="mb-3 fw-bold text-danger"><i class="fas fa-trash-alt me-2"></i>Hapus Patungan</h5>
+            <div class="alert alert-warning small">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Tindakan ini akan menghapus Channel, Role, dan Data Slot secara permanen!
+            </div>
+            <form action="/admin/delete_patungan" method="POST" onsubmit="return confirm('Yakin ingin menghapus patungan ini? Data tidak bisa kembali!');">
+                <div class="mb-3">
+                    <label class="form-label">Pilih Patungan</label>
+                    <select name="product_name" class="form-select bg-transparent text-white" required>
+                        <option value="" class="text-dark">-- Pilih Patungan --</option>
+                        {% for p in patungans %}
+                        <option value="{{ p.product_name }}" class="text-dark">{{ p.product_name }} ({{ p.current_slots }}/{{ p.total_slots }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-danger w-100"><i class="fas fa-bomb me-2"></i>Hapus Permanen</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleSchedule(val) {
+    const input = document.getElementById('scheduleInput');
+    if(val === 'schedule') input.classList.remove('d-none');
+    else input.classList.add('d-none');
+}
+
+function loadMembers(productName) {
+    const select = document.getElementById('memberSelect');
+    if(!productName) {
+        select.innerHTML = '<option value="" class="text-dark">-- Pilih Patungan Dulu --</option>';
+        select.disabled = true;
+        return;
+    }
+    
+    fetch(`/admin/get_members/${productName}`)
+        .then(response => response.json())
+        .then(data => {
+            select.innerHTML = '<option value="" class="text-dark">-- Pilih Member --</option>';
+            data.forEach(member => {
+                select.innerHTML += `<option value="${member.username}" class="text-dark">Slot ${member.slot}: ${member.username}</option>`;
+            });
+            select.disabled = false;
+        });
+}
+</script>
+{% endblock %}

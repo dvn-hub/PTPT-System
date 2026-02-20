@@ -39,18 +39,14 @@
         <div class="glass-card h-100 d-flex flex-column">
             <div class="d-flex justify-content-between mb-3">
                 <h5 class="fw-bold"><i class="fas fa-user-shield me-2"></i>Admin Dashboard</h5>
-                <span class="badge bg-warning text-dark">Admin Only</span>
+                <button class="btn btn-sm btn-glass" onclick="editPanel('dashboard', `{{ panels.dashboard.title }}`, `{{ panels.dashboard.description }}`)"><i class="fas fa-edit"></i> Edit</button>
             </div>
             <p class="text-white-50 small">Panel kontrol pusat untuk admin mengelola patungan, verifikasi pembayaran, dan settings.</p>
             
             <div class="discord-embed mb-3">
-                <div class="embed-title">👑 DVN COMMAND CENTER</div>
+                <div class="embed-title">{{ panels.dashboard.title }}</div>
                 <div class="embed-desc">
-                    Panel kontrol eksekutif untuk manajemen transaksi Patungan X8.<br><br>
-                    **📋 Menu Admin:**<br>
-                    ⛏️ **Buat Patungan** - Membuat patungan baru (V1, V2, dll)<br>
-                    ⛏️ **Kelola Patungan** - Lihat status dan edit patungan<br>
-                    ⛏️ **Verifikasi Pembayaran** - Cek pembayaran pending
+                    {{ panels.dashboard.description | replace('\n', '<br>') | safe }}
                 </div>
             </div>
 
@@ -97,19 +93,14 @@
         <div class="glass-card h-100 d-flex flex-column">
             <div class="d-flex justify-content-between mb-3">
                 <h5 class="fw-bold"><i class="fas fa-ticket-alt me-2"></i>Ticket Panel</h5>
-                <span class="badge bg-info">Public</span>
+                <button class="btn btn-sm btn-glass" onclick="editPanel('ticket', `{{ panels.ticket.title }}`, `{{ panels.ticket.description }}`)"><i class="fas fa-edit"></i> Edit</button>
             </div>
             <p class="text-white-50 small">Panel utama bagi user untuk membuat ticket order baru.</p>
             
             <div class="discord-embed mb-3" style="border-left-color: #3498db;">
-                <div class="embed-title">🍀 OPEN SLOT PTPT & X8 LUCK 🍀</div>
+                <div class="embed-title">{{ panels.ticket.title }}</div>
                 <div class="embed-desc">
-                    ✨ **Halo Fisherman!** Ingin join slot Patungan (PTPT) Boost Luck?<br><br>
-                    **Cara Order:**<br>
-                    1️⃣ Klik tombol **🎫 Buat Ticket** di bawah.<br>
-                    2️⃣ Pilih **Server / Jenis Layanan** yang kamu inginkan.<br>
-                    3️⃣ Lakukan pembayaran sesuai instruksi bot.<br><br>
-                    *⚠️ Pastikan slot masih tersedia di channel Info Slot!*
+                    {{ panels.ticket.description | replace('\n', '<br>') | safe }}
                 </div>
             </div>
 
@@ -122,4 +113,43 @@
         </div>
     </div>
 </div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editPanelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content glass-card border-0">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title">Edit Panel Content</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/save_panel" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="panel_type" id="panel_type">
+                    <div class="mb-3">
+                        <label class="form-label">Embed Title</label>
+                        <input type="text" class="form-control bg-transparent text-white" name="title" id="panel_title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Embed Description</label>
+                        <textarea class="form-control bg-transparent text-white" name="description" id="panel_desc" rows="8" required></textarea>
+                        <small class="text-white-50">Support Markdown Discord (**bold**, *italic*, dll)</small>
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function editPanel(type, title, desc) {
+    document.getElementById('panel_type').value = type;
+    document.getElementById('panel_title').value = title;
+    document.getElementById('panel_desc').value = desc;
+    new bootstrap.Modal(document.getElementById('editPanelModal')).show();
+}
+</script>
 {% endblock %}

@@ -13,6 +13,8 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 import random
+import os
+import json
 import string
 
 logger = logging.getLogger(__name__)
@@ -973,14 +975,25 @@ class TicketHandler:
 
     def get_ticket_panel_data(self):
         """Get embed and view for ticket panel"""
+        # Default values
+        title = f"{Emojis.ICON_LUCKY} **OPEN SLOT PTPT & X8 LUCK** {Emojis.ICON_LUCKY}"
+        desc = f"{Emojis.SPARKLE_1} **Halo Fisherman!** Ingin join slot Patungan (PTPT) Boost Luck?\n\n**Cara Order:**\n1️⃣ Klik tombol **{Emojis.TICKET} Buat Ticket** di bawah.\n2️⃣ Pilih **Server / Jenis Layanan** yang kamu inginkan.\n3️⃣ Lakukan pembayaran sesuai instruksi bot.\n\n*{Emojis.WARNING} Pastikan slot masih tersedia di channel Info Slot!*"
+
+        # Load from panels.json if exists
+        try:
+            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'panels.json')
+            if os.path.exists(path):
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    if 'ticket' in data:
+                        title = data['ticket']['title']
+                        desc = data['ticket']['description']
+        except Exception as e:
+            logger.error(f"Error loading panels.json: {e}")
+
         embed = discord.Embed(
-            title=f"{Emojis.ICON_LUCKY} **OPEN SLOT PTPT & X8 LUCK** {Emojis.ICON_LUCKY}",
-            description=f"{Emojis.SPARKLE_1} **Halo Fisherman!** Ingin join slot Patungan (PTPT) Boost Luck?\n\n"
-                        f"**Cara Order:**\n"
-                        f"1️⃣ Klik tombol **{Emojis.TICKET} Buat Ticket** di bawah.\n"
-                        f"2️⃣ Pilih **Server / Jenis Layanan** yang kamu inginkan.\n"
-                        f"3️⃣ Lakukan pembayaran sesuai instruksi bot.\n\n"
-                        f"*{Emojis.WARNING} Pastikan slot masih tersedia di channel Info Slot!*",
+            title=title,
+            description=desc,
             color=0x2ecc71 # Emerald Green
         )
         embed.set_footer(text="DVN PTPT SYSTEM | Auto-Management")
