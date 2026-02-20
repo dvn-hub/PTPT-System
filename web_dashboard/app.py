@@ -125,6 +125,38 @@ def index():
                            open_tickets=open_tickets,
                            total_services=total_services)
 
+# --- ROUTES BARU UNTUK SIDEBAR ---
+
+@app.route('/panel')
+def panel_ptpt():
+    if not session.get('logged_in'): return redirect('/')
+    return render_template('panel.html', admin=session)
+
+@app.route('/commands')
+def custom_commands():
+    if not session.get('logged_in'): return redirect('/')
+    return render_template('base.html', admin=session) # Placeholder, nanti buat file commands.html
+
+@app.route('/slots')
+def manage_slots():
+    if not session.get('logged_in'): return redirect('/')
+    return "<h1>Halaman Kelola Slot (Dalam Perbaikan)</h1><a href='/'>Kembali ke Home</a>"
+
+@app.route('/transactions')
+def transaction_history():
+    if not session.get('logged_in'): return redirect('/')
+    return "<h1>Halaman Riwayat Transaksi (Dalam Perbaikan)</h1><a href='/'>Kembali ke Home</a>"
+
+@app.route('/broadcast')
+def broadcast():
+    if not session.get('logged_in'): return redirect('/')
+    return "<h1>Halaman Broadcast Iklan (Dalam Perbaikan)</h1><a href='/'>Kembali ke Home</a>"
+
+@app.route('/stock')
+def stock_panel():
+    if not session.get('logged_in'): return redirect('/')
+    return "<h1>Halaman Stock Panel (Dalam Perbaikan)</h1><a href='/'>Kembali ke Home</a>"
+
 # --- FITUR EDIT IKLAN ---
 @app.route('/save_iklan', methods=['POST'])
 def save_iklan():

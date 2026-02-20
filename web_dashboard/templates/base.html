@@ -1,285 +1,136 @@
-<!-- templates/base.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DivineBlox - Admin Dashboard</title>
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    
-    <!-- Bootstrap 5 CSS -->
+    <title>Dashboard Admin - DivineBlox</title>
+    <!-- CSS Links -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts (Inter) -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root {
-            --bg-gradient: linear-gradient(135deg, #000428, #004e92);
-            --glass-bg: rgba(255, 255, 255, 0.1);
-            --glass-border: rgba(255, 255, 255, 0.2);
-            --sidebar-bg: rgba(0, 0, 0, 0.2);
-            --text-primary: #ffffff;
-            --text-secondary: rgba(255, 255, 255, 0.7);
-            --accent-color: #00d2ff;
-            --accent-green: #00ff88;
-            --accent-red: #ff4b4b;
-        }
-
+        /* Base Theme (Sesuai request: Biru Glassmorphism) */
         body {
-            background: var(--bg-gradient);
-            color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
+            background: linear-gradient(135deg, #000428, #004e92);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: white;
             min-height: 100vh;
+            overflow-x: hidden;
         }
-
-        /* --- Sidebar --- */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+        .btn-glass {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            transition: all 0.3s;
+        }
+        .btn-glass:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            transform: translateY(-2px);
+        }
+        .table-glass { color: white; }
+        .table-glass th, .table-glass td {
+            border-color: rgba(255, 255, 255, 0.1);
+            background: transparent;
+            color: white;
+        }
+        
+        /* Sidebar Styles */
         .sidebar {
-            width: 260px;
             height: 100vh;
+            width: 260px;
             position: fixed;
             top: 0;
             left: 0;
-            background: var(--sidebar-bg);
+            background: rgba(0, 0, 0, 0.2);
             backdrop-filter: blur(10px);
-            border-right: 1px solid var(--glass-border);
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 20px;
             z-index: 1000;
         }
-
         .sidebar-brand {
-            font-size: 1.25rem;
-            font-weight: 800;
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 30px;
-            letter-spacing: 0.5px;
+            padding: 0 25px 20px 25px;
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: white;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 15px;
         }
-
-        .sidebar-brand i {
-            color: var(--accent-color);
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 15px;
-            color: var(--text-secondary);
+        .sidebar-link {
+            padding: 12px 25px;
             text-decoration: none;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: all 0.2s;
-            border-left: 3px solid transparent;
-            margin-bottom: 5px;
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.7);
+            display: block;
+            transition: 0.3s;
+            border-left: 4px solid transparent;
         }
-
-        .nav-item:hover {
-            color: var(--text-primary);
+        .sidebar-link:hover, .sidebar-link.active {
             background: rgba(255, 255, 255, 0.1);
-            transform: translateX(5px);
+            color: white;
+            border-left: 4px solid #00d2ff;
         }
-
-        .nav-item.active {
-            background: rgba(255, 255, 255, 0.2);
-            color: var(--text-primary);
-            border-left-color: var(--accent-color);
-        }
-
-        /* --- Main Content --- */
-        .main-wrapper {
+        
+        /* Main Content */
+        .main-content {
             margin-left: 260px;
-            padding: 30px 40px;
-            position: relative;
-            z-index: 1;
+            padding: 30px;
         }
-
-        /* Top Navbar */
         .top-navbar {
             display: flex;
             justify-content: flex-end;
-            align-items: center;
-            gap: 25px;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
         }
-
-        .user-badge {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(5px);
-            padding: 6px 15px 6px 6px;
-            border-radius: 30px;
-            border: 1px solid var(--glass-border);
-        }
-
-        .user-avatar {
-            width: 32px;
-            height: 32px;
+        .avatar {
+            width: 35px;
+            height: 35px;
             border-radius: 50%;
-            border: 2px solid var(--accent-color);
-        }
-
-        /* Cards */
-        .custom-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 25px;
-            height: 100%;
-            transition: transform 0.2s;
-            position: relative;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-        }
-        
-        .custom-card:hover {
-            border-color: var(--accent-color);
-            transform: translateY(-5px);
-        }
-
-        /* Stats */
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            line-height: 1;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-
-        .text-accent { color: var(--accent-color) !important; }
-        .text-green { color: var(--accent-green) !important; }
-        .text-red { color: var(--accent-red) !important; }
-
-        /* Tables */
-        .table-dark-custom {
-            --bs-table-bg: transparent;
-            --bs-table-color: var(--text-secondary);
-            --bs-table-border-color: var(--glass-border);
-        }
-        .table-dark-custom th {
-            color: var(--text-primary);
-            font-weight: 600;
-            border-bottom-width: 1px;
-        }
-        .table-dark-custom td {
-            vertical-align: middle;
-        }
-
-        /* Forms */
-        .form-control-dark {
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--glass-border);
-            color: var(--text-primary);
-            border-radius: 8px;
-        }
-        .form-control-dark:focus {
-            background: rgba(0, 0, 0, 0.3);
-            border-color: var(--accent-color);
-            color: var(--text-primary);
-            box-shadow: none;
-        }
-
-        .btn-glass-primary {
-            background: rgba(0, 210, 255, 0.2);
-            border: 1px solid var(--accent-color);
-            color: var(--accent-color);
-            transition: 0.2s;
-        }
-        .btn-glass-primary:hover {
-            background: var(--accent-color);
-            color: #000;
-        }
-
-        /* Responsive Adjustments */
-        @media (max-width: 992px) {
-            .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
-            .main-wrapper { margin-left: 0; padding: 20px; }
+            border: 2px solid rgba(255,255,255,0.5);
         }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-
     <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="sidebar-brand">
-            <i class="fas fa-rocket"></i> DIVINEBLOX
-        </div>
-
-        <nav class="nav flex-column flex-grow-1">
-            <a href="{{ url_for('index') }}" class="nav-item {% if request.endpoint == 'index' %}active{% endif %}">
-                <i class="fas fa-home"></i> Home
-            </a>
-            <a href="{{ url_for('panel_ptpt') }}" class="nav-item {% if request.endpoint == 'panel_ptpt' %}active{% endif %}">
-                <i class="fas fa-layer-group"></i> Panel PTPT
-            </a>
-            <a href="{{ url_for('custom_commands') }}" class="nav-item {% if request.endpoint == 'custom_commands' %}active{% endif %}">
-                <i class="fas fa-terminal"></i> Custom Command
-            </a>
-            <a href="{{ url_for('manage_slots') }}" class="nav-item {% if request.endpoint == 'manage_slots' %}active{% endif %}">
-                <i class="fas fa-users-cog"></i> Kelola Slot
-            </a>
-            <a href="{{ url_for('transaction_history') }}" class="nav-item {% if request.endpoint == 'transaction_history' %}active{% endif %}">
-                <i class="fas fa-history"></i> Riwayat Transaksi
-            </a>
-            <a href="{{ url_for('broadcast') }}" class="nav-item {% if request.endpoint == 'broadcast' %}active{% endif %}">
-                <i class="fas fa-bullhorn"></i> Broadcast Iklan
-            </a>
-            <a href="{{ url_for('stock_panel') }}" class="nav-item {% if request.endpoint == 'stock_panel' %}active{% endif %}">
-                <i class="fas fa-cubes"></i> Stock Panel
-            </a>
-        </nav>
-
-        <a href="/logout" class="nav-item text-danger mt-auto">
-            <i class="fas fa-sign-out-alt"></i> Logout
-        </a>
-    </aside>
+    <div class="sidebar">
+        <div class="sidebar-brand"><i class="fas fa-rocket me-2"></i>DivineBlox</div>
+        <a href="{{ url_for('index') }}" class="sidebar-link {% if request.endpoint == 'index' %}active{% endif %}"><i class="fas fa-home me-2"></i>Home</a>
+        <a href="{{ url_for('panel_ptpt') }}" class="sidebar-link {% if request.endpoint == 'panel_ptpt' %}active{% endif %}"><i class="fas fa-layer-group me-2"></i>Panel PTPT</a>
+        <a href="{{ url_for('custom_commands') }}" class="sidebar-link {% if request.endpoint == 'custom_commands' %}active{% endif %}"><i class="fas fa-terminal me-2"></i>Custom Command</a>
+        <a href="{{ url_for('manage_slots') }}" class="sidebar-link {% if request.endpoint == 'manage_slots' %}active{% endif %}"><i class="fas fa-users-cog me-2"></i>Kelola Slot</a>
+        <a href="{{ url_for('transaction_history') }}" class="sidebar-link {% if request.endpoint == 'transaction_history' %}active{% endif %}"><i class="fas fa-history me-2"></i>Riwayat Transaksi</a>
+        <a href="{{ url_for('broadcast') }}" class="sidebar-link {% if request.endpoint == 'broadcast' %}active{% endif %}"><i class="fas fa-bullhorn me-2"></i>Broadcast Iklan</a>
+        <a href="{{ url_for('stock_panel') }}" class="sidebar-link {% if request.endpoint == 'stock_panel' %}active{% endif %}"><i class="fas fa-cubes me-2"></i>Stock Panel</a>
+        <a href="/logout" class="sidebar-link text-danger mt-4"><i class="fas fa-sign-out-alt me-2"></i>Logout</a>
+    </div>
 
     <!-- Main Content -->
-    <main class="main-wrapper">
-        
-        <!-- Top Navbar -->
+    <div class="main-content">
         <div class="top-navbar">
-            <div class="user-badge">
-                {% if admin and admin.avatar %}
-                <img src="{{ admin.avatar }}" class="user-avatar">
-                <span style="font-size: 0.9rem; font-weight: 600;">{{ admin.username }}</span>
-                {% else %}
-                <span style="font-size: 0.9rem; font-weight: 600;">Admin</span>
-                {% endif %}
+            <div class="d-flex align-items-center glass-card py-2 px-4 mb-0 rounded-pill">
+                <img src="{{ session.get('avatar', '') }}" class="avatar me-3">
+                <span class="fw-bold">{{ session.get('username', 'Admin') }}</span>
             </div>
         </div>
 
-        <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
-              <div class="alert alert-{{ category }} mb-4" style="background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: white; backdrop-filter: blur(5px);">
-                  <i class="fas fa-info-circle me-2"></i> {{ message }}
-              </div>
+              <div class="alert alert-{{ category }} glass-card py-2 text-white border-0">{{ message }}</div>
             {% endfor %}
           {% endif %}
         {% endwith %}
 
-        <!-- Content Block -->
         {% block content %}{% endblock %}
-    </main>
-
-    <!-- Scripts -->
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     {% block scripts %}{% endblock %}
 </body>
