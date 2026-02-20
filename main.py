@@ -578,6 +578,10 @@ class PatunganBot(commands.Bot):
             try:
                 # Ambil kata pertama setelah ! (contoh: !harga -> harga)
                 cmd_name = message.content[1:].split()[0].lower()
+                
+                # Refresh session agar bot sadar ada data baru dari web
+                self.session.expire_all()
+                
                 stmt = select(CustomCommand).where(CustomCommand.name == cmd_name)
                 result = await self.session.execute(stmt)
                 cmd = result.scalar_one_or_none()

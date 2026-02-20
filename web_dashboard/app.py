@@ -332,8 +332,15 @@ def save_settings():
 @app.route('/add_command', methods=['POST'])
 def add_command():
     if not session.get('logged_in'): return redirect('/')
-    name = request.form.get('name')
+    name = request.form.get('name').lower().strip() # Force lowercase & strip
     response = request.form.get('response')
+    
+    # Cek duplikat
+    existing = CustomCommand.query.filter_by(name=name).first()
+    if existing:
+        flash(f"Command !{name} sudah ada!", "warning")
+        return redirect(url_for('custom_commands'))
+
     new_cmd = CustomCommand(name=name, response=response)
     db.session.add(new_cmd)
     db.session.commit()
