@@ -9,9 +9,10 @@
         border-radius: 4px;
         padding: 15px;
         margin-top: 10px;
+        font-size: 0.85rem;
     }
     .embed-title { font-weight: 700; color: white; margin-bottom: 8px; }
-    .embed-desc { font-size: 0.9rem; color: rgba(255,255,255,0.7); line-height: 1.5; }
+    .embed-desc { color: rgba(255,255,255,0.7); line-height: 1.4; }
     .action-bar { display: flex; gap: 10px; margin-bottom: 10px; }
     .action-btn {
         font-size: 0.8rem; padding: 4px 10px; border-radius: 4px;
@@ -24,41 +25,99 @@
 {% block content %}
 <div class="mb-4 d-flex justify-content-between align-items-center">
     <div>
-        <h2 class="fw-bold">Panel PTPT</h2>
-        <p class="text-white-50">Manage your Discord embed panels.</p>
+        <h2 class="fw-bold">Panel Management</h2>
+        <p class="text-white-50">Kelola tampilan panel dan embed di Discord server.</p>
     </div>
-    <button class="btn btn-glass"><i class="fas fa-plus me-2"></i> Create New Panel</button>
+    <form action="/panel/action" method="POST" class="d-inline">
+        <button type="submit" name="action" value="refresh_status" class="btn btn-glass"><i class="fas fa-sync me-2"></i> Refresh Status</button>
+    </form>
 </div>
 
 <div class="row g-4">
-    <!-- Card 1 -->
-    <div class="col-md-6">
-        <div class="glass-card">
-            <div class="action-bar">
-                <a href="#" class="action-btn"><i class="fas fa-edit me-1"></i> Edit</a>
-                <a href="#" class="action-btn"><i class="fas fa-arrows-alt me-1"></i> Move</a>
-                <a href="#" class="action-btn text-danger"><i class="fas fa-trash me-1"></i> Delete</a>
+    <!-- 1. Admin Dashboard Panel -->
+    <div class="col-md-4">
+        <div class="glass-card h-100 d-flex flex-column">
+            <div class="d-flex justify-content-between mb-3">
+                <h5 class="fw-bold"><i class="fas fa-user-shield me-2"></i>Admin Dashboard</h5>
+                <span class="badge bg-warning text-dark">Admin Only</span>
             </div>
-            <div class="discord-embed">
-                <div class="embed-title">💎 DVN TRANSACTION DESK</div>
+            <p class="text-white-50 small">Panel kontrol pusat untuk admin mengelola patungan, verifikasi pembayaran, dan settings.</p>
+            
+            <div class="discord-embed mb-3">
+                <div class="embed-title">👑 DVN COMMAND CENTER</div>
                 <div class="embed-desc">
-                    Selamat datang di layanan Patungan X8 DivineBlox.<br><br>
-                    ⚠️ <b>PERATURAN:</b><br>1. Dilarang spam ticket.<br>2. Ikuti instruksi bot.<br><br>
-                    ✅ <b>STATUS:</b> ONLINE
+                    Panel kontrol eksekutif untuk manajemen transaksi Patungan X8.<br><br>
+                    **📋 Menu Admin:**<br>
+                    ⛏️ **Buat Patungan** - Membuat patungan baru (V1, V2, dll)<br>
+                    ⛏️ **Kelola Patungan** - Lihat status dan edit patungan<br>
+                    ⛏️ **Verifikasi Pembayaran** - Cek pembayaran pending
                 </div>
             </div>
-            <div class="mt-3 d-flex gap-2">
-                <button class="btn btn-sm btn-primary w-100" style="background: #5865F2; border: none;">🛒 Order Now</button>
+
+            <div class="mt-auto">
+                <form action="/panel/action" method="POST">
+                    <button type="submit" name="action" value="send_dashboard" class="btn btn-sm btn-glass w-100 mb-2"><i class="fas fa-paper-plane me-2"></i>Kirim Ulang Panel</button>
+                </form>
+                <div class="text-center"><small class="text-white-50">Channel: #admin-dashboard</small></div>
             </div>
         </div>
     </div>
-    
-    <!-- Card 2 (Dummy) -->
-    <div class="col-md-6">
-        <div class="glass-card d-flex align-items-center justify-content-center" style="min-height: 300px; border-style: dashed;">
-            <div class="text-center text-white-50">
-                <i class="fas fa-plus-circle fa-3x mb-3"></i>
-                <p>Tambah Panel Baru</p>
+
+    <!-- 2. List PTPT Panel -->
+    <div class="col-md-4">
+        <div class="glass-card h-100 d-flex flex-column">
+            <div class="d-flex justify-content-between mb-3">
+                <h5 class="fw-bold"><i class="fas fa-list-ul me-2"></i>List PTPT</h5>
+                <span class="badge bg-success">Live Update</span>
+            </div>
+            <p class="text-white-50 small">List otomatis yang menampilkan status real-time semua patungan aktif.</p>
+            
+            <div class="discord-embed mb-3" style="border-left-color: #2ecc71;">
+                <div class="embed-title">🔥 V1 - 24 Jam</div>
+                <div class="embed-desc">
+                    `1.` User1 - || @User1 || (PAID) ✅<br>
+                    `2.` User2 - || @User2 || (BOOKED) ⌨️<br>
+                    ...<br><br>
+                    📜 **Script:** ✅ Yes<br>
+                    🚀 **Start:** Full Slot
+                </div>
+            </div>
+
+            <div class="mt-auto">
+                <form action="/panel/action" method="POST">
+                    <button type="submit" name="action" value="refresh_list" class="btn btn-sm btn-glass w-100 mb-2"><i class="fas fa-sync-alt me-2"></i>Force Refresh List</button>
+                </form>
+                <div class="text-center"><small class="text-white-50">Channel: #list-ptpt-x8</small></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Ticket PTPT Panel -->
+    <div class="col-md-4">
+        <div class="glass-card h-100 d-flex flex-column">
+            <div class="d-flex justify-content-between mb-3">
+                <h5 class="fw-bold"><i class="fas fa-ticket-alt me-2"></i>Ticket Panel</h5>
+                <span class="badge bg-info">Public</span>
+            </div>
+            <p class="text-white-50 small">Panel utama bagi user untuk membuat ticket order baru.</p>
+            
+            <div class="discord-embed mb-3" style="border-left-color: #3498db;">
+                <div class="embed-title">🍀 OPEN SLOT PTPT & X8 LUCK 🍀</div>
+                <div class="embed-desc">
+                    ✨ **Halo Fisherman!** Ingin join slot Patungan (PTPT) Boost Luck?<br><br>
+                    **Cara Order:**<br>
+                    1️⃣ Klik tombol **🎫 Buat Ticket** di bawah.<br>
+                    2️⃣ Pilih **Server / Jenis Layanan** yang kamu inginkan.<br>
+                    3️⃣ Lakukan pembayaran sesuai instruksi bot.<br><br>
+                    *⚠️ Pastikan slot masih tersedia di channel Info Slot!*
+                </div>
+            </div>
+
+            <div class="mt-auto">
+                <form action="/panel/action" method="POST">
+                    <button type="submit" name="action" value="send_ticket" class="btn btn-sm btn-glass w-100 mb-2"><i class="fas fa-paper-plane me-2"></i>Kirim Ulang Panel</button>
+                </form>
+                <div class="text-center"><small class="text-white-50">Channel: #open-ticket</small></div>
             </div>
         </div>
     </div>

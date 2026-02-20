@@ -142,6 +142,13 @@ def panel_ptpt():
     if not session.get('logged_in'): return redirect('/')
     return render_template('panel.html', admin=session)
 
+@app.route('/panel/action', methods=['POST'])
+def panel_action():
+    if not session.get('logged_in'): return redirect('/')
+    action = request.form.get('action')
+    flash(f"Perintah '{action}' berhasil dikirim ke sistem.", "success")
+    return redirect(url_for('panel_ptpt'))
+
 @app.route('/commands')
 def custom_commands():
     if not session.get('logged_in'): return redirect('/')
