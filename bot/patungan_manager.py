@@ -1644,6 +1644,33 @@ class PatunganManager:
                         else:
                             logger.warning(f"Remote action failed: Member {username} not found in {product_name}")
 
+                    elif action.action_type == 'broadcast':
+                        # Logic Broadcast
+                        channel_ids = payload.get('channels', '').split(',')
+                        embed_data = payload.get('embed', {})
+                        
+                        embed = discord.Embed(
+                            title=embed_data.get('title'),
+                            description=embed_data.get('description'),
+                            color=int(embed_data.get('color', '0x3498db'), 16)
+                        )
+                        
+                        if embed_data.get('image'):
+                            embed.set_image(url=embed_data.get('image'))
+                            
+                        success_count = 0
+                        for cid in channel_ids:
+                            if not cid.strip(): continue
+                            try:
+                                channel = self.bot.get_channel(int(cid.strip()))
+                                if channel:
+                                    await channel.send(embed=embed)
+                                    success_count += 1
+                            except Exception as e:
+                                logger.error(f"Failed to broadcast to {cid}: {e}")
+                        
+                        logger.info(f"Broadcast sent to {success_count} channels")
+
                     action.status = 'completed'
                     action.processed_at = datetime.now()
                     

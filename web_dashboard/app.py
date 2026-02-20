@@ -23,6 +23,7 @@ DB_PATH = os.path.join(PARENT_DIR, 'patungan.db')
 FILE_PROMO = os.path.join(PARENT_DIR, 'bot_iklan', 'pesan.txt')
 FILE_SCRIPT = os.path.join(PARENT_DIR, 'bot_script', 'scripts.json')
 FILE_PANELS = os.path.join(PARENT_DIR, 'panels.json')
+FILE_BROADCASTS = os.path.join(PARENT_DIR, 'broadcasts.json')
 
 # --- DEBUG PATH DATABASE (Cek Terminal/Log) ---
 print(f"--> DEBUG DB PATH: {DB_PATH}")
@@ -61,6 +62,15 @@ def load_panels():
         except:
             return defaults
     return defaults
+
+def load_broadcasts():
+    if os.path.exists(FILE_BROADCASTS):
+        try:
+            with open(FILE_BROADCASTS, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            return []
+    return []
 
 # --- ROUTES AUTH (SAMA KAYAK SEBELUMNYA) ---
 @app.route('/login')
@@ -346,7 +356,80 @@ def transaction_history():
 @app.route('/broadcast')
 def broadcast():
     if not session.get('logged_in'): return redirect('/')
-    return "<h1>Halaman Broadcast Iklan (Dalam Perbaikan)</h1><a href='/'>Kembali ke Home</a>"
+    templates = load_broadcasts()
+    return render_template('broadcast.html', admin=session, templates=templates)
+
+@app.route('/save_broadcast', methods=['POST'])
+def save_broadcast():
+    if not session.get('logged_in'): return redirect('/')
+    
+    template_id = request.form.get('template_id') or secrets.token_hex(4)
+    data = {
+        'id': template_id,
+        'name': request.form.get('name'),
+        'channels': request.form.get('channels'),
+        'title': request.form.get('title'),
+        'description': request.form.get('description'),
+        'image_url': request.form.get('image_url'),
+        'color': request.form.get('color', '#3498db')
+    }
+    
+    templates = load_broadcasts()
+    # Update existing or add new
+    updated = False
+    for i, t in enumerate(templates):
+        if t['id'] == template_id:
+            templates[i] = data
+            updated = True
+            break
+    if not updated:
+        templates.append(data)
+        
+    with open(FILE_BROADCASTS, 'w', encoding='utf-8') as f:
+        json.dump(templates, f, indent=4)
+        
+    flash("Template broadcast berhasil disimpan!", "success")
+    return redirect(url_for('broadcast'))
+
+@app.route('/delete_broadcast/<id>', methods=['POST'])
+def delete_broadcast(id):
+    if not session.get('logged_in'): return redirect('/')
+    templates = load_broadcasts()
+    templates = [t for t in templates if t['id'] != id]
+    with open(FILE_BROADCASTS, 'w', encoding='utf-8') as f:
+        json.dump(templates, f, indent=4)
+    flash("Template berhasil dihapus.", "success")
+    return redirect(url_for('broadcast'))
+
+@app.route('/send_broadcast/<id>', methods=['POST'])
+def send_broadcast(id):
+    if not session.get('logged_in'): return redirect('/')
+    templates = load_broadcasts()
+    template = next((t for t in templates if t['id'] == id), None)
+    
+    if template:
+        payload = {
+            'channels': template['channels'],
+            'embed': {
+                'title': template['title'],
+                'description': template['description'],
+                'image': template['image_url'],
+                'color': template['color'].replace('#', '0x')
+            }
+        }
+        
+        new_action = ActionQueue(
+            action_type='broadcast',
+            payload=json.dumps(payload),
+            created_by=session['username']
+        )
+        db.session.add(new_action)
+        db.session.commit()
+        flash(f"Broadcast '{template['name']}' sedang dikirim oleh bot!", "success")
+    else:
+        flash("Template tidak ditemukan.", "danger")
+        
+    return redirect(url_for('broadcast'))
 
 @app.route('/stock')
 def stock_panel():
