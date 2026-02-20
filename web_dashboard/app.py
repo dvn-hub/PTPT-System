@@ -278,7 +278,34 @@ def get_members(product_name):
 @app.route('/slots')
 def manage_slots():
     if not session.get('logged_in'): return redirect('/')
-    return "<h1>Halaman Kelola Slot (Dalam Perbaikan)</h1><a href='/'>Kembali ke Home</a>"
+    # Ambil semua patungan aktif
+    patungans = Patungan.query.filter(Patungan.status != 'archived').all()
+    return render_template('manage_slots.html', admin=session, patungans=patungans)
+
+@app.route('/commands')
+def custom_commands():
+    if not session.get('logged_in'): return redirect('/')
+    commands = CustomCommand.query.order_by(CustomCommand.created_at.desc()).all()
+    return render_template('commands.html', admin=session, commands=commands)
+
+@app.route('/add_command', methods=['POST'])
+def add_command():
+    if not session.get('logged_in'): return redirect('/')
+    name = request.form.get('name')
+    response = request.form.get('response')
+    new_cmd = CustomCommand(name=name, response=response)
+    db.session.add(new_cmd)
+    db.session.commit()
+    flash(f"Command !{name} berhasil ditambahkan!", "success")
+    return redirect(url_for('custom_commands'))
+
+@app.route('/delete_command/<int:id>', methods=['POST'])
+def delete_command(id):
+    if not session.get('logged_in'): return redirect('/')
+    CustomCommand.query.filter_by(id=id).delete()
+    db.session.commit()
+    flash("Command berhasil dihapus!", "success")
+    return redirect(url_for('custom_commands'))
 
 @app.route('/transactions')
 def transaction_history():

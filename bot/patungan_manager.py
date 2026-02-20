@@ -7,7 +7,7 @@ from database.crud import (
     get_user_slots, get_unpaid_slots, create_system_log,
     get_ticket_by_channel
 )
-from database.models import SystemLog, Patungan
+from database.models import SystemLog, Patungan, ActionQueue, UserSlot, UserTicket
 import asyncio
 from datetime import datetime, timedelta
 import logging
@@ -22,6 +22,7 @@ class PatunganManager:
         self.config = Config()
         self.deadline_check_running = False
         self.schedule_check_running = False
+        self.action_check.start()
         
     async def setup_channels(self):
         """Setup initial channels and roles"""
@@ -1533,6 +1534,104 @@ class PatunganManager:
         except Exception as e:
             logger.error(f"Error importing single patungan: {e}")
             return False
+
+    @tasks.loop(seconds=5)
+    async def action_check(self):
+        """Check for pending actions from Web Dashboard"""
+        try:
+            from sqlalchemy import select
+            
+            # Expire all to get fresh data
+            self.bot.session.expire_all()
+            
+            stmt = select(ActionQueue).where(ActionQueue.status == 'pending').order_by(ActionQueue.created_at)
+            result = await self.bot.session.execute(stmt)
+            actions = result.scalars().all()
+
+            if not actions:
+                return
+
+            for action in actions:
+                try:
+                    logger.info(f"Processing remote action: {action.action_type} (ID: {action.id})")
+                    payload = json.loads(action.payload)
+                    
+                    if action.action_type == 'create_patungan':
+                        # Logic Create Patungan
+                        new_patungan = Patungan(
+                            product_name=payload['product_name'],
+                            display_name=payload['product_name'],
+                            price=payload['price'],
+                            total_slots=payload['max_slots'],
+                            status='open',
+                            use_script=payload['use_script'],
+                            start_mode=payload['start_mode'],
+                            duration_hours=payload['duration']
+                        )
+                        
+                        if payload.get('schedule'):
+                            try:
+                                new_patungan.start_schedule = datetime.strptime(payload['schedule'], "%Y-%m-%dT%H:%M")
+                            except:
+                                pass
+                        
+                        self.bot.session.add(new_patungan)
+                        await self.bot.session.flush()
+                        
+                        # Create Channel & Role
+                        channel_id, role_id = await self.create_patungan_channel_role(
+                            version=payload['product_name'],
+                            price=payload['price']
+                        )
+                        
+                        if channel_id and role_id:
+                            new_patungan.discord_channel_id = str(channel_id)
+                            new_patungan.discord_role_id = str(role_id)
+                        
+                        await self.update_list_channel()
+                        await self.update_announcement_message(payload['product_name'])
+
+                    elif action.action_type == 'delete_patungan':
+                        # Logic Delete Patungan
+                        await self.delete_patungan_fully(payload['product_name'], f"Web Admin ({action.created_by})")
+
+                    elif action.action_type == 'remove_member':
+                        # Logic Remove Member
+                        # Kita gunakan logic manual karena AdminHandler butuh interaction
+                        product_name = payload['product_name']
+                        username = payload['username']
+                        
+                        # Cari slot
+                        stmt_slot = select(UserSlot).where(
+                            UserSlot.patungan_version == product_name,
+                            (UserSlot.game_username == username) | (UserSlot.display_name == username),
+                            UserSlot.slot_status.in_(['booked', 'waiting_payment', 'paid'])
+                        )
+                        res_slot = await self.bot.session.execute(stmt_slot)
+                        slot = res_slot.scalar_one_or_none()
+                        
+                        if slot:
+                            # Panggil fungsi cancel slot by number yang sudah ada di AdminHandler (jika bisa diakses)
+                            # Atau implementasi ulang logic shift slot disini (lebih aman untuk background task)
+                            # Untuk simplifikasi, kita update status jadi kicked dulu, nanti admin bisa rapikan manual atau restart bot
+                            slot.slot_status = 'kicked'
+                            await self.update_list_channel()
+
+                    action.status = 'completed'
+                    action.processed_at = datetime.now()
+                    
+                except Exception as e:
+                    logger.error(f"Error processing action {action.id}: {e}")
+                    action.status = 'failed'
+            
+            await self.bot.session.commit()
+            
+        except Exception as e:
+            logger.error(f"Error in action_check loop: {e}")
+
+    @action_check.before_loop
+    async def before_action_check(self):
+        await self.bot.wait_until_ready()
 
     async def sync_legacy_patungan(self, channel_id: int):
         """Sync patungan data from existing embeds in list channel"""

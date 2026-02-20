@@ -1,0 +1,75 @@
+<!-- web_dashboard/templates/commands.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <div>
+        <h2 class="fw-bold">Custom Commands</h2>
+        <p class="text-white-50">Kelola respon otomatis bot untuk command tertentu.</p>
+    </div>
+    <button class="btn btn-success btn-glass" data-bs-toggle="modal" data-bs-target="#addCommandModal">
+        <i class="fas fa-plus me-2"></i>Tambah Command
+    </button>
+</div>
+
+<div class="glass-card">
+    <div class="table-responsive">
+        <table class="table table-glass align-middle">
+            <thead>
+                <tr>
+                    <th>Command</th>
+                    <th>Response</th>
+                    <th>Dibuat Pada</th>
+                    <th class="text-end">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cmd in commands %}
+                <tr>
+                    <td class="fw-bold text-warning">!{{ cmd.name }}</td>
+                    <td class="text-truncate" style="max-width: 300px;">{{ cmd.response }}</td>
+                    <td>{{ cmd.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td class="text-end">
+                        <form action="/delete_command/{{ cmd.id }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus command ini?');">
+                            <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center py-4 text-white-50">Belum ada custom command.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Tambah Command -->
+<div class="modal fade" id="addCommandModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content glass-card border-0">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title">Tambah Custom Command</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/add_command" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nama Command (tanpa !)</label>
+                        <input type="text" name="name" class="form-control bg-transparent text-white" placeholder="contoh: harga" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Respon Bot</label>
+                        <textarea name="response" class="form-control bg-transparent text-white" rows="3" placeholder="Pesan yang akan dikirim bot..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

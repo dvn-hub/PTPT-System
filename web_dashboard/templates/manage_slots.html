@@ -1,0 +1,68 @@
+<!-- web_dashboard/templates/manage_slots.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="mb-4">
+    <h2 class="fw-bold">Kelola Slot & Patungan</h2>
+    <p class="text-white-50">Daftar patungan yang sedang aktif di server.</p>
+</div>
+
+<div class="glass-card">
+    <div class="table-responsive">
+        <table class="table table-glass align-middle">
+            <thead>
+                <tr>
+                    <th>Nama Produk</th>
+                    <th>Harga/Slot</th>
+                    <th>Progress</th>
+                    <th>Status</th>
+                    <th>Durasi</th>
+                    <th>Script</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in patungans %}
+                <tr>
+                    <td>
+                        <div class="fw-bold">{{ p.product_name }}</div>
+                        <small class="text-white-50">{{ p.display_name or '-' }}</small>
+                    </td>
+                    <td class="text-info fw-bold">Rp {{ "{:,}".format(p.price) }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="progress flex-grow-1 me-2" style="height: 6px; background: rgba(255,255,255,0.1);">
+                                <div class="progress-bar bg-info" style="width: {{ (p.current_slots / p.total_slots * 100)|int }}%"></div>
+                            </div>
+                            <small>{{ p.current_slots }}/{{ p.total_slots }}</small>
+                        </div>
+                    </td>
+                    <td>
+                        {% if p.status == 'open' %}
+                            <span class="badge bg-success">OPEN</span>
+                        {% elif p.status == 'running' %}
+                            <span class="badge bg-primary">RUNNING</span>
+                        {% elif p.status == 'closed' %}
+                            <span class="badge bg-danger">CLOSED</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ p.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ p.duration_hours }} Jam</td>
+                    <td>
+                        {% if p.use_script == 'Yes' %}
+                            <i class="fas fa-check text-success"></i>
+                        {% else %}
+                            <i class="fas fa-times text-danger"></i>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-white-50">Belum ada patungan aktif.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
