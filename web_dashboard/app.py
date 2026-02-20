@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, session, url_for, g, flash
 import os, requests, json, secrets
 from datetime import datetime
+import concurrent.futures
 import sys
 # Add parent directory to path to import modules from root
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
@@ -27,7 +28,7 @@ DB_PATH = os.path.join(PARENT_DIR, 'patungan.db')
 FILE_PROMO = os.path.join(PARENT_DIR, 'bot_iklan', 'pesan.txt')
 FILE_SCRIPT = os.path.join(PARENT_DIR, 'bot_script', 'scripts.json')
 FILE_PANELS = os.path.join(PARENT_DIR, 'panels.json')
-FILE_BROADCASTS = os.path.join(PARENT_DIR, 'bot_iklan', 'broadcasts.json')
+FILE_BROADCASTS = os.path.join(PARENT_DIR, 'bot_iklan', 'config.json')
 
 # --- DEBUG PATH DATABASE (Cek Terminal/Log) ---
 print(f"--> DEBUG DB PATH: {DB_PATH}")
@@ -79,10 +80,24 @@ def load_broadcasts():
                     templates = data
                 # Handle Format Dict {} (Legacy/Other Bot)
                 elif isinstance(data, dict):
-                    for k, v in data.items():
-                        if isinstance(v, dict):
-                            if 'id' not in v: v['id'] = k
-                            templates.append(v)
+                    # Cek jika ada key 'messages' atau 'broadcasts' (Common structure)
+                    target_data = data
+                    if 'messages' in data and isinstance(data['messages'], (dict, list)):
+                        target_data = data['messages']
+                    elif 'broadcasts' in data and isinstance(data['broadcasts'], (dict, list)):
+                        target_data = data['broadcasts']
+
+                    if isinstance(target_data, list):
+                        templates = target_data
+                    elif isinstance(target_data, dict):
+                        for k, v in target_data.items():
+                            if isinstance(v, dict):
+                                # Basic validation: anggap ini template jika punya title/desc/embed
+                                if 'title' in v or 'description' in v or 'embed' in v or 'body' in v:
+                                    if 'id' not in v: v['id'] = k
+                                    if 'name' not in v: v['name'] = k
+                                    if 'color' not in v: v['color'] = '#3498db'
+                                    templates.append(v)
                             
                 if templates: return templates
         except Exception as e:
@@ -484,20 +499,31 @@ def stock_panel():
     try:
         print("DEBUG: Fetching stock data from API...")
         api = WinterAPI()
-        raw_data = api.fetch_data()
-        print(f"DEBUG: API Response received. Data: {'Yes' if raw_data else 'No'}")
-        if raw_data:
-            data = process_data(raw_data)
-            
-            # Sort secrets for display (High Tier)
-            if 'secrets' in data:
-                items = []
-                for name, info in data['secrets'].items(): items.append((name, info))
-                normals = [x for x in items if not x[1]['is_mutation']]
-                mutations = [x for x in items if x[1]['is_mutation']]
-                normals.sort(key=lambda x: x[0])
-                mutations.sort(key=lambda x: x[0])
-                data['sorted_secrets'] = normals + mutations
+        
+        # Use ThreadPoolExecutor to add timeout (Fix Stuck Loading)
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(api.fetch_data)
+            try:
+                raw_data = future.result(timeout=5) # 5 seconds timeout
+                print(f"DEBUG: API Response received. Data: {'Yes' if raw_data else 'No'}")
+                if raw_data:
+                    data = process_data(raw_data)
+                    
+                    # Sort secrets for display (High Tier)
+                    if 'secrets' in data:
+                        items = []
+                        for name, info in data['secrets'].items(): items.append((name, info))
+                        normals = [x for x in items if not x[1]['is_mutation']]
+                        mutations = [x for x in items if x[1]['is_mutation']]
+                        normals.sort(key=lambda x: x[0])
+                        mutations.sort(key=lambda x: x[0])
+                        data['sorted_secrets'] = normals + mutations
+            except concurrent.futures.TimeoutError:
+                print("❌ API Request Timed Out")
+                flash("Gagal mengambil data stock: Request Timeout (API WinterCode lambat/down)", "danger")
+            except Exception as e:
+                print(f"❌ API Error: {e}")
+                flash(f"Gagal mengambil data stock: {str(e)}", "danger")
                 
     except Exception as e:
         print(f"Error fetching stock: {e}")
