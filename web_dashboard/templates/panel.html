@@ -1,0 +1,123 @@
+<!-- templates/panel.html -->
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+    /* Discord Embed Style Adaptation */
+    .discord-embed {
+        background: rgba(0, 0, 0, 0.3);
+        border-left: 4px solid var(--accent-color);
+        border-radius: 4px;
+        padding: 15px;
+        margin-top: 10px;
+    }
+    
+    .embed-title {
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .embed-desc {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+
+    .action-bar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .action-btn {
+        font-size: 0.8rem;
+        padding: 4px 10px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: 0.2s;
+    }
+    
+    .action-btn:hover {
+        background: var(--accent-color);
+        color: #000;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="fw-bold">Panel PTPT</h1>
+        <p class="text-secondary">Manage your Discord embed panels.</p>
+    </div>
+    <button class="btn btn-glass-primary"><i class="fas fa-plus me-2"></i> Create New Panel</button>
+</div>
+
+<div class="row g-4">
+    <!-- Card 1 -->
+    <div class="col-md-6">
+        <div class="custom-card">
+            <!-- Action Bar -->
+            <div class="action-bar">
+                <a href="#" class="action-btn"><i class="fas fa-edit me-1"></i> Edit</a>
+                <a href="#" class="action-btn"><i class="fas fa-arrows-alt me-1"></i> Move</a>
+                <a href="#" class="action-btn text-danger"><i class="fas fa-trash me-1"></i> Delete</a>
+            </div>
+
+            <!-- Embed Preview -->
+            <div class="discord-embed">
+                <div class="embed-title">💎 DVN TRANSACTION DESK</div>
+                <div class="embed-desc">
+                    Selamat datang di layanan Patungan X8 DivineBlox.<br><br>
+                    ⚠️ <b>PERATURAN:</b><br>
+                    1. Dilarang spam ticket.<br>
+                    2. Ikuti instruksi bot.<br>
+                    3. Upload bukti transfer yang jelas.<br><br>
+                    ✅ <b>STATUS:</b> ONLINE
+                </div>
+            </div>
+
+            <!-- Buttons Simulation -->
+            <div class="mt-3 d-flex gap-2">
+                <button class="btn btn-sm btn-primary w-100" style="background: #5865F2; border: none;">🛒 Order Now</button>
+                <button class="btn btn-sm btn-secondary w-100" style="background: #4F545C; border: none;">ℹ️ Info</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="col-md-6">
+        <div class="custom-card">
+            <!-- Action Bar -->
+            <div class="action-bar">
+                <a href="#" class="action-btn"><i class="fas fa-edit me-1"></i> Edit</a>
+                <a href="#" class="action-btn"><i class="fas fa-arrows-alt me-1"></i> Move</a>
+                <a href="#" class="action-btn text-danger"><i class="fas fa-trash me-1"></i> Delete</a>
+            </div>
+
+            <!-- Embed Preview -->
+            <div class="discord-embed" style="border-left-color: var(--accent-green);">
+                <div class="embed-title">📢 INFO STOCK & HARGA</div>
+                <div class="embed-desc">
+                    Update harga terbaru untuk layanan Patungan.<br><br>
+                    📦 <b>V1 - 24 JAM</b><br>
+                    Harga: Rp 50.000 / Slot<br>
+                    Stock: 19 Slot<br><br>
+                    📦 <b>V2 - 12 JAM</b><br>
+                    Harga: Rp 30.000 / Slot<br>
+                    Stock: 10 Slot
+                </div>
+            </div>
+
+            <!-- Buttons Simulation -->
+            <div class="mt-3">
+                <button class="btn btn-sm btn-success w-100" style="background: var(--accent-green); border: none; color: #000;">Check Stock</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

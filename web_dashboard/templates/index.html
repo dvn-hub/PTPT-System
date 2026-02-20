@@ -1,482 +1,171 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DivineBlox - Admin Dashboard</title>
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts (Inter) -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- templates/index.html -->
+{% extends 'base.html' %}
 
-    <style>
-        :root {
-            --bg-gradient: linear-gradient(135deg, #000428, #004e92);
-            --glass-bg: rgba(255, 255, 255, 0.1);
-            --glass-border: rgba(255, 255, 255, 0.2);
-            --sidebar-bg: rgba(0, 0, 0, 0.2);
-            --text-primary: #ffffff;
-            --text-secondary: rgba(255, 255, 255, 0.7);
-            --accent-color: #00d2ff;
-            --accent-green: #00ff88;
-            --accent-red: #ff4b4b;
-        }
+{% block content %}
+<!-- Header -->
+<div class="mb-4">
+    <h1 class="fw-bold">Dashboard</h1>
+    <p class="text-secondary">Overview of your server data and statistics.</p>
+</div>
 
-        body {
-            background: var(--bg-gradient);
-            color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
-            min-height: 100vh;
-        }
-
-        /* --- Sidebar --- */
-        .sidebar {
-            width: 260px;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            background: var(--sidebar-bg);
-            backdrop-filter: blur(10px);
-            border-right: 1px solid var(--glass-border);
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-            z-index: 1000;
-        }
-
-        .sidebar-brand {
-            font-size: 1.25rem;
-            font-weight: 800;
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 30px;
-            letter-spacing: 0.5px;
-        }
-
-        .sidebar-brand i {
-            color: var(--accent-color);
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 15px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: all 0.2s;
-            border-left: 3px solid transparent;
-            margin-bottom: 5px;
-        }
-
-        .nav-item:hover {
-            color: var(--text-primary);
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateX(5px);
-        }
-
-        .nav-item.active {
-            background: rgba(255, 255, 255, 0.2);
-            color: var(--text-primary);
-            border-left-color: var(--accent-color);
-        }
-
-        /* --- Main Content --- */
-        .main-wrapper {
-            margin-left: 260px;
-            padding: 30px 40px;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Top Navbar */
-        .top-navbar {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            gap: 25px;
-            margin-bottom: 40px;
-        }
-
-        .user-badge {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(5px);
-            padding: 6px 15px 6px 6px;
-            border-radius: 30px;
-            border: 1px solid var(--glass-border);
-        }
-
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: 2px solid var(--accent-color);
-        }
-
-        /* Cards */
-        .custom-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 25px;
-            height: 100%;
-            transition: transform 0.2s;
-            position: relative;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-        }
-        
-        .custom-card:hover {
-            border-color: var(--accent-color);
-            transform: translateY(-5px);
-        }
-
-        /* Stats */
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            line-height: 1;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-
-        .text-accent { color: var(--accent-color) !important; }
-        .text-green { color: var(--accent-green) !important; }
-        .text-red { color: var(--accent-red) !important; }
-
-        /* Tables */
-        .table-dark-custom {
-            --bs-table-bg: transparent;
-            --bs-table-color: var(--text-secondary);
-            --bs-table-border-color: var(--glass-border);
-        }
-        .table-dark-custom th {
-            color: var(--text-primary);
-            font-weight: 600;
-            border-bottom-width: 1px;
-        }
-        .table-dark-custom td {
-            vertical-align: middle;
-        }
-
-        /* Forms */
-        .form-control-dark {
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--glass-border);
-            color: var(--text-primary);
-            border-radius: 8px;
-        }
-        .form-control-dark:focus {
-            background: rgba(0, 0, 0, 0.3);
-            border-color: var(--accent-color);
-            color: var(--text-primary);
-            box-shadow: none;
-        }
-
-        .btn-glass-primary {
-            background: rgba(0, 210, 255, 0.2);
-            border: 1px solid var(--accent-color);
-            color: var(--accent-color);
-            transition: 0.2s;
-        }
-        .btn-glass-primary:hover {
-            background: var(--accent-color);
-            color: #000;
-        }
-
-        /* Responsive Adjustments */
-        @media (max-width: 992px) {
-            .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
-            .main-wrapper { margin-left: 0; padding: 20px; }
-        }
-    </style>
-</head>
-<body>
-
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="sidebar-brand">
-            <i class="fas fa-rocket"></i> DIVINEBLOX
-        </div>
-
-        <nav class="nav flex-column flex-grow-1">
-            <a href="#" class="nav-item active" onclick="window.scrollTo({top: 0, behavior: 'smooth'}); return false;"><i class="fas fa-home"></i> Home</a>
-            <a href="#approval" class="nav-item"><i class="fas fa-money-check-alt"></i> Approval</a>
-            <a href="#broadcast" class="nav-item"><i class="fas fa-bullhorn"></i> Broadcast</a>
-            <a href="#commands" class="nav-item"><i class="fas fa-terminal"></i> Commands</a>
-            <a href="#statistics" class="nav-item"><i class="fas fa-chart-bar"></i> Statistics</a>
-        </nav>
-
-        <a href="/logout" class="nav-item text-danger mt-auto">
-            <i class="fas fa-sign-out-alt"></i> Logout
-        </a>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="main-wrapper">
-        
-        <!-- Top Navbar -->
-        <div class="top-navbar">
-            <div class="user-badge">
-                <img src="{{ admin.avatar }}" class="user-avatar">
-                <span style="font-size: 0.9rem; font-weight: 600;">{{ admin.username }}</span>
+<div class="row g-4">
+    <!-- Row 1: Server Info -->
+    <div class="col-12">
+        <div class="custom-card d-flex align-items-center gap-3">
+            <div style="width: 60px; height: 60px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid var(--glass-border); font-weight: bold;">DVN</div>
+            <div>
+                <h4 class="mb-0 fw-bold">DivineBlox Community</h4>
+                <span class="badge bg-info text-dark">PREMIUM PLAN</span>
             </div>
         </div>
+    </div>
 
-        <!-- Header -->
-        <div class="mb-4">
-            <h1 class="fw-bold">Dashboard</h1>
-            <p class="text-secondary">Overview of your server data and statistics.</p>
+    <!-- Row 2: Stats -->
+    <div class="col-md-4">
+        <div class="custom-card">
+            <div class="stat-value text-accent">{{ pending|length }}</div>
+            <div class="stat-label">Pending Payments</div>
+            <i class="fas fa-clock position-absolute top-0 end-0 m-4 text-secondary opacity-25 fa-2x" style="pointer-events: none;"></i>
         </div>
+    </div>
+    <div class="col-md-4">
+        <div class="custom-card">
+            <div class="stat-value text-green">{{ commands|length }}</div>
+            <div class="stat-label">Custom Commands</div>
+            <i class="fas fa-terminal position-absolute top-0 end-0 m-4 text-secondary opacity-25 fa-2x" style="pointer-events: none;"></i>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="custom-card">
+            <div class="stat-value text-red">Rp {{ "{:,}".format(omzet) }}</div>
+            <div class="stat-label">Total Omzet</div>
+            <i class="fas fa-wallet position-absolute top-0 end-0 m-4 text-secondary opacity-25 fa-2x" style="pointer-events: none;"></i>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="custom-card">
+            <div class="stat-value text-primary">{{ total_tickets }}</div>
+            <div class="stat-label">Total Tickets</div>
+            <i class="fas fa-ticket-alt position-absolute top-0 end-0 m-4 text-secondary opacity-25 fa-2x" style="pointer-events: none;"></i>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="custom-card">
+            <div class="stat-value text-warning">{{ open_tickets }}</div>
+            <div class="stat-label">Open Tickets</div>
+            <i class="fas fa-envelope-open-text position-absolute top-0 end-0 m-4 text-secondary opacity-25 fa-2x" style="pointer-events: none;"></i>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="custom-card">
+            <div class="stat-value text-info">{{ total_services }}</div>
+            <div class="stat-label">Total Services</div>
+            <i class="fas fa-server position-absolute top-0 end-0 m-4 text-secondary opacity-25 fa-2x" style="pointer-events: none;"></i>
+        </div>
+    </div>
 
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }} mb-4" style="background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: white; backdrop-filter: blur(5px);">
-                  <i class="fas fa-info-circle me-2"></i> {{ message }}
-              </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
+    <!-- Row 3: Charts -->
+    <div class="col-md-6">
+        <div class="custom-card">
+            <h6 class="mb-3 fw-bold">Ticket Distribution</h6>
+            <div style="height: 300px;"><canvas id="chart1"></canvas></div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="custom-card">
+            <h6 class="mb-3 fw-bold">Weekly Activity</h6>
+            <div style="height: 300px;"><canvas id="chart2"></canvas></div>
+        </div>
+    </div>
 
-        <!-- Grid Layout -->
-        <div class="row g-4">
+    <!-- Row 4: Approval Table (Tetap di Home sebagai Overview) -->
+    <div class="col-12">
+        <div class="custom-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-money-bill-wave text-accent me-2"></i>Approval Pembayaran</h5>
+                <span class="badge bg-secondary">{{ pending|length }} Pending</span>
+            </div>
             
-            <!-- Row 1: Server Info -->
-            <div class="col-12">
-                <div class="custom-card d-flex align-items-center gap-3">
-                    <div style="width: 60px; height: 60px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid var(--glass-border); font-weight: bold;">DVN</div>
-                    <div>
-                        <h4 class="mb-0 fw-bold">DivineBlox Community</h4>
-                        <span class="badge bg-info text-dark">PREMIUM PLAN</span>
-                    </div>
-                </div>
+            {% if pending %}
+            <div class="table-responsive">
+                <table class="table table-dark-custom align-middle">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Nominal</th>
+                            <th>Bukti</th>
+                            <th class="text-end">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in pending %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold">{{ p.username }}</div>
+                                <small class="text-secondary">ID: {{ p.id }}</small>
+                            </td>
+                            <td class="text-accent fw-bold">Rp {{ "{:,}".format(p.amount) }}</td>
+                            <td>
+                                <a href="{{ p.proof_url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-image"></i> Lihat
+                                </a>
+                            </td>
+                            <td class="text-end">
+                                <form action="/approve/{{ p.id }}" method="POST" class="d-inline">
+                                    <button class="btn btn-sm btn-success"><i class="fas fa-check"></i></button>
+                                </form>
+                                <form action="/reject/{{ p.id }}" method="POST" class="d-inline">
+                                    <button class="btn btn-sm btn-danger"><i class="fas fa-times"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-
-            <!-- Row 2: Stats -->
-            <div class="col-md-4">
-                <div class="custom-card">
-                    <div class="stat-value text-accent">{{ pending|length }}</div>
-                    <div class="stat-label">Pending Payments</div>
-                    <i class="fas fa-clock position-absolute top-0 end-0 m-4 text-secondary opacity-25 fa-2x" style="pointer-events: none;"></i>
-                </div>
+            {% else %}
+            <div class="text-center py-5 text-secondary">
+                <i class="fas fa-check-circle fa-3x mb-3 opacity-50"></i>
+                <p>Tidak ada pembayaran pending.</p>
             </div>
-            <div class="col-md-4">
-                <div class="custom-card">
-                    <div class="stat-value text-green">{{ commands|length }}</div>
-                    <div class="stat-label">Custom Commands</div>
-                    <i class="fas fa-terminal position-absolute top-0 end-0 m-4 text-secondary opacity-25 fa-2x" style="pointer-events: none;"></i>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="custom-card">
-                    <div class="stat-value text-red">Rp {{ "{:,}".format(omzet) }}</div>
-                    <div class="stat-label">Total Omzet</div>
-                    <i class="fas fa-wallet position-absolute top-0 end-0 m-4 text-secondary opacity-25 fa-2x" style="pointer-events: none;"></i>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="custom-card">
-                    <div class="stat-value text-primary">{{ total_tickets }}</div>
-                    <div class="stat-label">Total Tickets</div>
-                    <i class="fas fa-ticket-alt position-absolute top-0 end-0 m-4 text-secondary opacity-25 fa-2x" style="pointer-events: none;"></i>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="custom-card">
-                    <div class="stat-value text-warning">{{ open_tickets }}</div>
-                    <div class="stat-label">Open Tickets</div>
-                    <i class="fas fa-envelope-open-text position-absolute top-0 end-0 m-4 text-secondary opacity-25 fa-2x" style="pointer-events: none;"></i>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="custom-card">
-                    <div class="stat-value text-info">{{ total_services }}</div>
-                    <div class="stat-label">Total Services</div>
-                    <i class="fas fa-server position-absolute top-0 end-0 m-4 text-secondary opacity-25 fa-2x" style="pointer-events: none;"></i>
-                </div>
-            </div>
-
-            <!-- Row 3: Charts -->
-            <div class="col-md-6" id="statistics">
-                <div class="custom-card">
-                    <h6 class="mb-3 fw-bold">Ticket Distribution</h6>
-                    <div style="height: 200px;"><canvas id="chart1"></canvas></div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="custom-card">
-                    <h6 class="mb-3 fw-bold">Weekly Activity</h6>
-                    <div style="height: 200px;"><canvas id="chart2"></canvas></div>
-                </div>
-            </div>
-
-            <!-- Row 4: Payment Approval Table -->
-            <div class="col-lg-8" id="approval">
-                <div class="custom-card">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="mb-0 fw-bold"><i class="fas fa-money-bill-wave text-accent me-2"></i>Approval Pembayaran</h5>
-                        <span class="badge bg-secondary">{{ pending|length }} Pending</span>
-                    </div>
-                    
-                    {% if pending %}
-                    <div class="table-responsive">
-                        <table class="table table-dark-custom align-middle">
-                            <thead>
-                                <tr>
-                                    <th>User</th>
-                                    <th>Nominal</th>
-                                    <th>Bukti</th>
-                                    <th class="text-end">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for p in pending %}
-                                <tr>
-                                    <td>
-                                        <div class="fw-bold">{{ p.username }}</div>
-                                        <small class="text-secondary">ID: {{ p.id }}</small>
-                                    </td>
-                                    <td class="text-accent fw-bold">Rp {{ "{:,}".format(p.amount) }}</td>
-                                    <td>
-                                        <a href="{{ p.proof_url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
-                                            <i class="fas fa-image"></i> Lihat
-                                        </a>
-                                    </td>
-                                    <td class="text-end">
-                                        <form action="/approve/{{ p.id }}" method="POST" class="d-inline">
-                                            <button class="btn btn-sm btn-success"><i class="fas fa-check"></i></button>
-                                        </form>
-                                        <form action="/reject/{{ p.id }}" method="POST" class="d-inline">
-                                            <button class="btn btn-sm btn-danger"><i class="fas fa-times"></i></button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <div class="text-center py-5 text-secondary">
-                        <i class="fas fa-check-circle fa-3x mb-3 opacity-50"></i>
-                        <p>Tidak ada pembayaran pending.</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Row 5: Broadcast Iklan -->
-            <div class="col-lg-4" id="broadcast">
-                <div class="custom-card">
-                    <h5 class="mb-3 fw-bold"><i class="fas fa-bullhorn text-accent me-2"></i>Broadcast Iklan</h5>
-                    <form action="/save_iklan" method="POST">
-                        <div class="mb-3">
-                            <textarea name="isi_iklan" class="form-control form-control-dark" rows="6" placeholder="Tulis pesan iklan di sini...">{{ teks_iklan }}</textarea>
-                        </div>
-                        <button type="submit" class="btn btn-glass-primary w-100"><i class="fas fa-save me-2"></i> Simpan Iklan</button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Row 6: Custom Commands List -->
-            <div class="col-12" id="commands">
-                <div class="custom-card">
-                    <h5 class="mb-3 fw-bold"><i class="fas fa-terminal text-accent me-2"></i>Custom Commands List</h5>
-                    <div class="table-responsive">
-                        <table class="table table-dark-custom align-middle">
-                            <thead>
-                                <tr>
-                                    <th>Command Name</th>
-                                    <th>Response</th>
-                                    <th>Created At</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for cmd in commands %}
-                                <tr>
-                                    <td class="text-accent fw-bold">{{ cmd.name }}</td>
-                                    <td class="text-truncate" style="max-width: 400px;">{{ cmd.response }}</td>
-                                    <td>{{ cmd.created_at.strftime('%Y-%m-%d') }}</td>
-                                </tr>
-                                {% else %}
-                                <tr><td colspan="3" class="text-center text-secondary">Belum ada custom command.</td></tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+            {% endif %}
         </div>
-    </main>
+    </div>
+</div>
+{% endblock %}
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // Chart Config (Dummy Data for Visuals)
-        Chart.defaults.color = 'rgba(255, 255, 255, 0.7)';
-        Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Chart Config
+    Chart.defaults.color = 'rgba(255, 255, 255, 0.7)';
+    Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
 
-        new Chart(document.getElementById('chart1'), {
-            type: 'doughnut',
-            data: {
-                labels: ['Paid', 'Pending', 'Rejected'],
-                datasets: [{
-                    data: [{{ paid_count }}, {{ pending|length }}, {{ rejected_count }}],
-                    backgroundColor: ['#00ff88', '#00d2ff', '#ff4b4b'],
-                    borderWidth: 0
-                }]
-            },
-            options: { maintainAspectRatio: false, cutout: '70%' }
-        });
+    new Chart(document.getElementById('chart1'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Paid', 'Pending', 'Rejected'],
+            datasets: [{
+                data: [{{ paid_count }}, {{ pending|length }}, {{ rejected_count }}],
+                backgroundColor: ['#00ff88', '#00d2ff', '#ff4b4b'],
+                borderWidth: 0
+            }]
+        },
+        options: { maintainAspectRatio: false, cutout: '70%' }
+    });
 
-        new Chart(document.getElementById('chart2'), {
-            type: 'bar',
-            data: {
-                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                datasets: [{
-                    label: 'Transactions',
-                    data: [12, 19, 3, 5, 2, 3, 10],
-                    backgroundColor: '#00d2ff',
-                    borderRadius: 4
-                }]
-            },
-            options: { maintainAspectRatio: false, scales: { x: { grid: { display: false } } } }
-        });
-
-        // Smooth scroll handler
-        document.querySelectorAll('.nav-item').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                if(this.getAttribute('href').startsWith('#')) {
-                    e.preventDefault();
-                    document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-                    this.classList.add('active');
-                    const targetId = this.getAttribute('href').substring(1);
-                    const targetElement = document.getElementById(targetId);
-                    if (targetElement) targetElement.scrollIntoView({ behavior: 'smooth' });
-                }
-            });
-        });
-    </script>
-</body>
-</html>
+    new Chart(document.getElementById('chart2'), {
+        type: 'bar',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Transactions',
+                data: [12, 19, 3, 5, 2, 3, 10],
+                backgroundColor: '#00d2ff',
+                borderRadius: 4
+            }]
+        },
+        options: { maintainAspectRatio: false, scales: { x: { grid: { display: false } } } }
+    });
+</script>
+{% endblock %}
