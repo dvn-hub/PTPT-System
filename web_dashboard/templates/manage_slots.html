@@ -57,7 +57,7 @@
                         {% endif %}
                     </td>
                     <td class="text-end">
-                        <button class="btn btn-sm btn-glass" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ p.id }}" aria-expanded="false" onclick="loadSlotDetails('{{ p.product_name }}', '{{ p.id }}')">
+                        <button class="btn btn-sm btn-glass" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ p.id }}" aria-expanded="false" onclick='loadSlotDetails({{ p.product_name|tojson }}, "{{ p.id }}")'>
                             <i class="fas fa-chevron-down me-1"></i> Detail
                         </button>
                     </td>
