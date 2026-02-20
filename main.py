@@ -14,7 +14,7 @@ from bot.payment_processor import PaymentProcessor
 from bot.views import MainTicketView, TicketPanelView, AdminDashboardView
 from utils.helpers import setup_logging
 import logging
-from database.crud import get_ticket_by_channel
+from database.crud import get_ticket_by_channel, get_setting
 from api import WinterAPI, process_data
 import ui
 from database.models import Patungan, CustomCommand
@@ -197,8 +197,10 @@ class PatunganBot(commands.Bot):
                 allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID]
                 
                 if any(role_id in user_roles for role_id in allowed_roles):
+                    # Get from DB (Editable via Web)
+                    qris_url = await get_setting(self.session, 'qris_image_url', self.config.QRIS_IMAGE_URL)
                     embed = discord.Embed(title="💳 QRIS Payment", color=self.config.COLOR_INFO)
-                    embed.set_image(url=self.config.QRIS_IMAGE_URL)
+                    embed.set_image(url=qris_url)
                     await message.channel.send(embed=embed)
 
         # Manual Command: .ps (Private Server Link - Admin Only)
@@ -208,7 +210,9 @@ class PatunganBot(commands.Bot):
                 allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID]
                 
                 if any(role_id in user_roles for role_id in allowed_roles):
-                    await message.channel.send(f"🔗 **Private Server Link:**\n```{self.config.PRIVATE_SERVER_LINK}```")
+                    # Get from DB (Editable via Web)
+                    ps_link = await get_setting(self.session, 'private_server_link', self.config.PRIVATE_SERVER_LINK)
+                    await message.channel.send(f"🔗 **Private Server Link:**\n```{ps_link}```")
         
         # Manual Command: .run (Set status to running)
         if message.content.lower().startswith('.run'):

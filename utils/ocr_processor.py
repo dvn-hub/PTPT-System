@@ -115,7 +115,10 @@ class OCRProcessor:
         numbers = re.findall(r'\b\d{4,}\b', text)  # Find numbers with 4+ digits
         if numbers:
             try:
-                return int(max(numbers, key=int))  # Take the largest number
+                # Filter angka yang terlalu panjang (ID Transaksi biasanya > 12 digit)
+                valid_numbers = [int(n) for n in numbers if len(n) < 12]
+                if valid_numbers:
+                    return max(valid_numbers)
             except ValueError:
                 pass
         

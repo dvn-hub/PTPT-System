@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, session, url_for, g, flash
 import os, requests, json, secrets
 from datetime import datetime
-from models import db, UserTicket, UserSlot, Patungan, PaymentRecord, CustomCommand, ActionQueue
+from models import db, UserTicket, UserSlot, Patungan, PaymentRecord, CustomCommand, ActionQueue, BotSettings
 
 app = Flask(__name__)
 app.secret_key = 'KUNCI_TETAP_DIVINEBLOX_123'
@@ -120,7 +120,11 @@ def index():
         commands = CustomCommand.query.order_by(CustomCommand.created_at.desc()).all()
 
         # Hitung Omzet Real (Total uang masuk status PAID)
-        omzet = db.session.query(db.func.sum(PaymentRecord.paid_amount)).filter(PaymentRecord.payment_status.in_(['PAID', 'verified'])).scalar() or 0
+        # FIX: Filter angka tidak masuk akal (> 1 Triliun) agar ID transaksi tidak terhitung
+        omzet = db.session.query(db.func.sum(PaymentRecord.paid_amount)).filter(
+            PaymentRecord.payment_status.in_(['PAID', 'verified']),
+            PaymentRecord.paid_amount < 1000000000000 
+        ).scalar() or 0
 
         # Hitung Statistik untuk Chart
         paid_count = PaymentRecord.query.filter(PaymentRecord.payment_status.in_(['PAID', 'verified'])).count()
@@ -280,8 +284,40 @@ def manage_slots():
 @app.route('/commands')
 def custom_commands():
     if not session.get('logged_in'): return redirect('/')
+    
+    # Ambil Custom Commands
     commands = CustomCommand.query.order_by(CustomCommand.created_at.desc()).all()
-    return render_template('commands.html', admin=session, commands=commands)
+    
+    # Ambil System Settings (.ps, .qr)
+    ps_link = BotSettings.query.get('private_server_link')
+    qris_url = BotSettings.query.get('qris_image_url')
+    
+    settings = {
+        'ps_link': ps_link.value if ps_link else '',
+        'qris_url': qris_url.value if qris_url else ''
+    }
+    
+    return render_template('commands.html', admin=session, commands=commands, settings=settings)
+
+@app.route('/save_settings', methods=['POST'])
+def save_settings():
+    if not session.get('logged_in'): return redirect('/')
+    
+    ps_link = request.form.get('ps_link')
+    qris_url = request.form.get('qris_url')
+    
+    # Helper function to save/update
+    def save_key(key, val):
+        setting = BotSettings.query.get(key)
+        if not setting: db.session.add(BotSettings(key=key, value=val))
+        else: setting.value = val
+    
+    save_key('private_server_link', ps_link)
+    save_key('qris_image_url', qris_url)
+    db.session.commit()
+    
+    flash("System Settings (.ps & .qr) berhasil diupdate!", "success")
+    return redirect(url_for('custom_commands'))
 
 @app.route('/add_command', methods=['POST'])
 def add_command():
