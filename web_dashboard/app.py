@@ -23,6 +23,13 @@ DB_PATH = os.path.join(PARENT_DIR, 'patungan.db')
 FILE_PROMO = os.path.join(PARENT_DIR, 'bot_iklan', 'pesan.txt')
 FILE_SCRIPT = os.path.join(PARENT_DIR, 'bot_script', 'scripts.json')
 
+# --- DEBUG PATH DATABASE (Cek Terminal/Log) ---
+print(f"--> DEBUG DB PATH: {DB_PATH}")
+if os.path.exists(DB_PATH):
+    print(f"--> DB FOUND. Size: {os.path.getsize(DB_PATH)} bytes")
+else:
+    print("--> DB NOT FOUND! Flask akan membuat file baru kosong.")
+
 # --- KONFIGURASI DATABASE ---
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_PATH}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -99,6 +106,8 @@ def index():
         total_services = Patungan.query.count()
     except Exception as e:
         print(f"Database Error: {e}")
+        # Tampilkan error di Dashboard agar ketahuan masalahnya
+        flash(f"Gagal Baca Database: {str(e)} | Path: {DB_PATH}", "danger")
         # Jika tabel belum ada, set default value biar gak error 500
         pending = []
         commands = []
