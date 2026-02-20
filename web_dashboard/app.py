@@ -1,7 +1,11 @@
 from flask import Flask, render_template, request, redirect, session, url_for, g, flash
 import os, requests, json, secrets
 from datetime import datetime
+import sys
+# Add parent directory to path to import modules from root
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 from models import db, UserTicket, UserSlot, Patungan, PaymentRecord, CustomCommand, ActionQueue, BotSettings
+from api import WinterAPI, process_data
 
 app = Flask(__name__)
 app.secret_key = 'KUNCI_TETAP_DIVINEBLOX_123'
@@ -64,13 +68,45 @@ def load_panels():
     return defaults
 
 def load_broadcasts():
+    defaults = [
+        {
+            "id": "default_1",
+            "name": "📢 General Announcement",
+            "channels": "",
+            "title": "📢 PENGUMUMAN PENTING",
+            "description": "Halo @everyone,\n\nAda informasi terbaru mengenai server DVN Store.\nSilakan cek channel informasi untuk detail lebih lanjut.",
+            "image_url": "https://cdn.discordapp.com/attachments/1452251463337377902/1456009509632737417/DVN_New.png",
+            "color": "#3498db"
+        },
+        {
+            "id": "default_2",
+            "name": "⚠️ Maintenance Mode",
+            "channels": "",
+            "title": "⚠️ SERVER MAINTENANCE",
+            "description": "Bot akan mengalami maintenance sebentar untuk peningkatan performa.\nMohon maaf atas ketidaknyamanannya.",
+            "image_url": "",
+            "color": "#f1c40f"
+        },
+        {
+            "id": "default_3",
+            "name": "🎉 Promo Spesial",
+            "channels": "",
+            "title": "🎉 PROMO SPESIAL HARI INI!",
+            "description": "Dapatkan diskon khusus untuk pembelian slot Patungan V1 & V2.\nHanya berlaku hari ini!",
+            "image_url": "",
+            "color": "#e91e63"
+        }
+    ]
+    
     if os.path.exists(FILE_BROADCASTS):
         try:
             with open(FILE_BROADCASTS, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                data = json.load(f)
+                if isinstance(data, list) and len(data) > 0:
+                    return data
         except:
-            return []
-    return []
+            pass
+    return defaults
 
 # --- ROUTES AUTH (SAMA KAYAK SEBELUMNYA) ---
 @app.route('/login')
@@ -444,7 +480,29 @@ def send_broadcast(id):
 @app.route('/stock')
 def stock_panel():
     if not session.get('logged_in'): return redirect('/')
-    return "<h1>Halaman Stock Panel (Dalam Perbaikan)</h1><a href='/'>Kembali ke Home</a>"
+    
+    data = None
+    try:
+        api = WinterAPI()
+        raw_data = api.fetch_data()
+        if raw_data:
+            data = process_data(raw_data)
+            
+            # Sort secrets for display (High Tier)
+            if 'secrets' in data:
+                items = []
+                for name, info in data['secrets'].items(): items.append((name, info))
+                normals = [x for x in items if not x[1]['is_mutation']]
+                mutations = [x for x in items if x[1]['is_mutation']]
+                normals.sort(key=lambda x: x[0])
+                mutations.sort(key=lambda x: x[0])
+                data['sorted_secrets'] = normals + mutations
+                
+    except Exception as e:
+        print(f"Error fetching stock: {e}")
+        flash(f"Gagal mengambil data stock: {str(e)}", "danger")
+        
+    return render_template('stock_panel.html', admin=session, data=data)
 
 @app.route('/check_db')
 def check_db():

@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <div>
+        <h2 class="fw-bold">Stock Monitor</h2>
+        <p class="text-white-50">Live stock monitoring from WinterCode API.</p>
+    </div>
+    <a href="/stock" class="btn btn-glass"><i class="fas fa-sync me-2"></i>Refresh Data</a>
+</div>
+
+{% if data %}
+<div class="row g-4">
+    <!-- SC HIGH TIER -->
+    <div class="col-md-8">
+        <div class="glass-card h-100">
+            <h5 class="mb-3 fw-bold text-info"><i class="fas fa-gem me-2"></i>SC HIGH TIER</h5>
+            <div class="table-responsive">
+                <table class="table table-glass align-middle table-sm">
+                    <thead>
+                        <tr>
+                            <th>Item Name</th>
+                            <th class="text-end">Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for name, info in data.sorted_secrets %}
+                        <tr>
+                            <td>
+                                {% if info.is_mutation %}
+                                    <span class="badge bg-warning text-dark me-2">MUTATION</span>
+                                {% endif %}
+                                {{ name }}
+                            </td>
+                            <td class="text-end fw-bold text-accent">{{ info.count }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="2" class="text-center text-white-50">No High-Tier Secrets found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESOURCES & LOW TIER -->
+    <div class="col-md-4">
+        <div class="row g-4">
+            <div class="col-12">
+                <div class="glass-card">
+                    <h5 class="mb-3 fw-bold text-success"><i class="fas fa-box-open me-2"></i>RESOURCES</h5>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>SC Low Tier</span>
+                        <span class="fw-bold">{{ data.sc_low_total }} Pcs</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Ruby Gemstone</span>
+                        <span class="fw-bold text-danger">{{ data.ruby }} Pcs</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Sacred Guardian Squid</span>
+                        <span class="fw-bold text-info">{{ data.squid }} Pcs</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-12">
+                <div class="glass-card">
+                    <h5 class="mb-3 fw-bold text-warning"><i class="fas fa-coins me-2"></i>VALUES</h5>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Coin via Mythic</span>
+                        <span class="fw-bold text-warning">C$ {{ "{:,.0f}".format(data.mythic_value) }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="glass-card">
+                    <h5 class="mb-3 fw-bold text-primary"><i class="fas fa-cubes me-2"></i>STONES</h5>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Evolved Stone</span>
+                        <span class="fw-bold">{{ "{:,}".format(data.evolved_stone) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Enchant Stone</span>
+                        <span class="fw-bold">{{ "{:,}".format(data.enchant_stone) }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- PRICE INFO -->
+    <div class="col-12">
+        <div class="glass-card">
+            <h5 class="mb-3 fw-bold"><i class="fas fa-tags me-2"></i>PRICE INFO</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <ul class="list-unstyled mb-0 text-white-50">
+                        <li>• Coin via Mythic : 1K / 2M</li>
+                        <li>• Secret Low : 1K / 2 Pcs</li>
+                        <li>• Enchant Stone : 1K / 50 Pcs</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <ul class="list-unstyled mb-0 text-white-50">
+                        <li>• Evolved Stone : 1K / 4 Pcs</li>
+                        <li>• Ruby Gemstone : 25K / Pcs</li>
+                        <li>• Lochness Monster : 10K / Pcs</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="text-center py-5">
+    <div class="spinner-border text-light mb-3" role="status"></div>
+    <p class="text-white-50">Memuat data stock... Jika lama, cek koneksi API.</p>
+</div>
+{% endif %}
+{% endblock %}
