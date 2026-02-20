@@ -18,6 +18,7 @@
                     <th>Status</th>
                     <th>Durasi</th>
                     <th>Script</th>
+                    <th class="text-end">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -55,10 +56,58 @@
                             <i class="fas fa-times text-danger"></i>
                         {% endif %}
                     </td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-glass" data-bs-toggle="modal" data-bs-target="#detailModal{{ p.id }}">
+                            <i class="fas fa-list me-1"></i> Detail
+                        </button>
+                    </td>
                 </tr>
+
+                <!-- Modal Detail Slot -->
+                <div class="modal fade" id="detailModal{{ p.id }}" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content glass-card border-0">
+                            <div class="modal-header border-bottom border-secondary">
+                                <h5 class="modal-title">Detail Slot: {{ p.product_name }}</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-glass align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th>No</th>
+                                                <th>Username</th>
+                                                <th>Display Name</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for slot in p.slots|sort(attribute='slot_number') %}
+                                            <tr>
+                                                <td><span class="badge bg-secondary">{{ slot.slot_number }}</span></td>
+                                                <td>{{ slot.game_username }}</td>
+                                                <td>{{ slot.display_name }}</td>
+                                                <td>
+                                                    {% if slot.slot_status == 'paid' %}<span class="badge bg-success">PAID</span>
+                                                    {% elif slot.slot_status == 'booked' %}<span class="badge bg-warning text-dark">BOOKED</span>
+                                                    {% elif slot.slot_status == 'waiting_payment' %}<span class="badge bg-info">WAITING</span>
+                                                    {% else %}<span class="badge bg-secondary">{{ slot.slot_status }}</span>{% endif %}
+                                                </td>
+                                            </tr>
+                                            {% else %}
+                                            <tr><td colspan="4" class="text-center text-white-50">Belum ada peserta.</td></tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 {% else %}
                 <tr>
-                    <td colspan="6" class="text-center py-4 text-white-50">Belum ada patungan aktif.</td>
+                    <td colspan="7" class="text-center py-4 text-white-50">Belum ada patungan aktif.</td>
                 </tr>
                 {% endfor %}
             </tbody>

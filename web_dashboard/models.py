@@ -25,6 +25,9 @@ class Patungan(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    # Relasi ke UserSlot agar bisa diakses via p.slots
+    slots = db.relationship('UserSlot', backref='patungan', lazy=True)
+
 class UserTicket(db.Model):
     __tablename__ = 'user_tickets'
     id = db.Column(db.Integer, primary_key=True)
