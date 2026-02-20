@@ -114,17 +114,17 @@ def index():
     
     try:
         # Ambil omzet dan data lainnya
-        pending = PaymentRecord.query.filter_by(payment_status='PENDING').all()
+        pending = PaymentRecord.query.filter_by(payment_status='pending').all()
         
         # Ambil daftar custom commands
         commands = CustomCommand.query.order_by(CustomCommand.created_at.desc()).all()
 
         # Hitung Omzet Real (Total uang masuk status PAID)
-        omzet = db.session.query(db.func.sum(PaymentRecord.paid_amount)).filter(PaymentRecord.payment_status == 'PAID').scalar() or 0
+        omzet = db.session.query(db.func.sum(PaymentRecord.paid_amount)).filter(PaymentRecord.payment_status.in_(['PAID', 'verified'])).scalar() or 0
 
         # Hitung Statistik untuk Chart
-        paid_count = PaymentRecord.query.filter_by(payment_status='PAID').count()
-        rejected_count = PaymentRecord.query.filter_by(payment_status='REJECTED').count()
+        paid_count = PaymentRecord.query.filter(PaymentRecord.payment_status.in_(['PAID', 'verified'])).count()
+        rejected_count = PaymentRecord.query.filter(PaymentRecord.payment_status.in_(['REJECTED', 'rejected'])).count()
         
         # Statistik Baru (Sesuai Instruksi)
         total_tickets = UserTicket.query.count()
@@ -402,7 +402,15 @@ def approve_payment(id):
     if not session.get('logged_in'): return redirect('/')
     payment = PaymentRecord.query.get(id)
     if payment:
-        payment.payment_status = 'PAID'
+        payment.payment_status = 'verified'
+        
+        # Update slot status juga agar user terhitung PAID di bot
+        if payment.slot:
+            payment.slot.slot_status = 'paid'
+            payment.slot.payment_verified = True
+            payment.slot.verified_by = session.get('username', 'Web Admin')
+            payment.slot.verified_at = datetime.now()
+            
         db.session.commit()
         flash("Pembayaran disetujui!", "success")
     else:
@@ -414,7 +422,7 @@ def reject_payment(id):
     if not session.get('logged_in'): return redirect('/')
     payment = PaymentRecord.query.get(id)
     if payment:
-        payment.payment_status = 'REJECTED'
+        payment.payment_status = 'rejected'
         db.session.commit()
         flash("Pembayaran ditolak!", "danger")
     else:

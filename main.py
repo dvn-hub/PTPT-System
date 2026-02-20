@@ -17,7 +17,7 @@ import logging
 from database.crud import get_ticket_by_channel
 from api import WinterAPI, process_data
 import ui
-from database.models import Patungan
+from database.models import Patungan, CustomCommand
 from sqlalchemy import select
 from datetime import datetime
 
@@ -568,6 +568,19 @@ class PatunganBot(commands.Bot):
         # Manual Command: .setup_tutorial
         if message.content.lower() == '.setup_tutorial':
              await self.admin_handler.handle_setup_tutorial_command(message)
+
+        # --- CUSTOM COMMANDS HANDLER (FROM DASHBOARD) ---
+        if message.content.startswith('!'):
+            try:
+                # Ambil kata pertama setelah ! (contoh: !harga -> harga)
+                cmd_name = message.content[1:].split()[0].lower()
+                stmt = select(CustomCommand).where(CustomCommand.name == cmd_name)
+                result = await self.session.execute(stmt)
+                cmd = result.scalar_one_or_none()
+                if cmd:
+                    await message.channel.send(cmd.response)
+            except Exception as e:
+                logger.error(f"Error checking custom command: {e}")
 
         await self.process_commands(message)
     

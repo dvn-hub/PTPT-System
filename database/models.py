@@ -157,3 +157,11 @@ class ActionQueue(Base):
     created_by = Column(String(100))
     created_at = Column(DateTime, default=lambda: datetime.now(pytz.timezone('Asia/Jakarta')))
     processed_at = Column(DateTime, nullable=True)
+
+class CustomCommand(Base):
+    __tablename__ = 'custom_commands'
+    
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), unique=True)
+    response = Column(Text)
+    created_at = Column(DateTime, default=lambda: datetime.now(pytz.timezone('Asia/Jakarta')))
