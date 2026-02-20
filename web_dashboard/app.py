@@ -501,29 +501,36 @@ def transaction_history():
     # Grouping by Date (YYYY-MM-DD)
     history = {}
     for p in payments:
-        # Skip orphaned payments (slot deleted)
-        if not p.slot or not p.slot.ticket: continue
+        try:
+            # Skip orphaned payments (slot deleted)
+            if not p.slot or not p.slot.ticket: continue
 
-        # Fallback jika verified_at kosong (pakai detected_at atau now)
-        dt = p.verified_at or p.detected_at or datetime.now()
-        
-        # Safety check: Konversi string ke datetime jika SQLite mengembalikan string
-        if isinstance(dt, str):
-            try:
-                dt = datetime.strptime(dt, '%Y-%m-%d %H:%M:%S.%f')
-            except ValueError:
+            # Fallback jika verified_at kosong (pakai detected_at atau now)
+            dt = p.verified_at or p.detected_at or datetime.now()
+            
+            # Safety check: Konversi string ke datetime jika SQLite mengembalikan string
+            if isinstance(dt, str):
                 try:
-                    dt = datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
+                    dt = datetime.strptime(dt, '%Y-%m-%d %H:%M:%S.%f')
                 except ValueError:
-                    dt = datetime.now()
+                    try:
+                        dt = datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
+                    except ValueError:
+                        dt = datetime.now()
 
-        date_key = dt.strftime('%Y-%m-%d')
-        
-        if date_key not in history:
-            history[date_key] = {'total_omzet': 0, 'items': []}
-        
-        history[date_key]['items'].append(p)
-        history[date_key]['total_omzet'] += (p.paid_amount or 0)
+            date_key = dt.strftime('%Y-%m-%d')
+            
+            if date_key not in history:
+                history[date_key] = {'total_omzet': 0, 'items': []}
+            
+            history[date_key]['items'].append(p)
+            
+            # Safe addition (handle string/None)
+            amount = int(p.paid_amount) if p.paid_amount else 0
+            history[date_key]['total_omzet'] += amount
+        except Exception as e:
+            print(f"Skipping corrupt payment record {p.id}: {e}")
+            continue
         
     return render_template('transactions.html', admin=session, history=history)
 
