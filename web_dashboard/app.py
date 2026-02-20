@@ -69,13 +69,42 @@ def load_panels():
 
 def load_broadcasts():
     if os.path.exists(FILE_BROADCASTS):
+        templates = []
         try:
             with open(FILE_BROADCASTS, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                if isinstance(data, list) and len(data) > 0:
-                    return data
-        except:
-            pass
+                
+                # Handle Format List []
+                if isinstance(data, list):
+                    templates = data
+                # Handle Format Dict {} (Legacy/Other Bot)
+                elif isinstance(data, dict):
+                    for k, v in data.items():
+                        if isinstance(v, dict):
+                            if 'id' not in v: v['id'] = k
+                            templates.append(v)
+                            
+                if templates: return templates
+        except Exception as e:
+            print(f"❌ Error loading broadcasts.json: {e}")
+
+    # Fallback: Ambil dari pesan.txt jika json kosong/gagal
+    if os.path.exists(FILE_PROMO):
+        try:
+            with open(FILE_PROMO, 'r', encoding='utf-8') as f:
+                content = f.read().strip()
+                if content:
+                    return [{
+                        "id": "legacy_promo",
+                        "name": "Legacy Promo (pesan.txt)",
+                        "channels": "",
+                        "title": "📢 BROADCAST",
+                        "description": content,
+                        "image_url": "",
+                        "color": "#3498db"
+                    }]
+        except: pass
+            
     return []
 
 # --- ROUTES AUTH (SAMA KAYAK SEBELUMNYA) ---
@@ -453,8 +482,10 @@ def stock_panel():
     
     data = None
     try:
+        print("DEBUG: Fetching stock data from API...")
         api = WinterAPI()
         raw_data = api.fetch_data()
+        print(f"DEBUG: API Response received. Data: {'Yes' if raw_data else 'No'}")
         if raw_data:
             data = process_data(raw_data)
             
