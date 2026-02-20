@@ -26,6 +26,7 @@ FILE_SCRIPT = os.path.join(PARENT_DIR, 'bot_script', 'scripts.json')
 # --- KONFIGURASI DATABASE ---
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_PATH}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 db.init_app(app)
 
 # --- ROUTES AUTH (SAMA KAYAK SEBELUMNYA) ---
