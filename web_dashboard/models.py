@@ -61,6 +61,7 @@ class UserSlot(db.Model):
     __tablename__ = 'user_slots'
     id = db.Column(db.Integer, primary_key=True)
     ticket_id = db.Column(db.Integer, db.ForeignKey('user_tickets.id'), nullable=False)
+    ticket = db.relationship('UserTicket', backref='slots')
     patungan_version = db.Column(db.String(100), db.ForeignKey('patungan.product_name'), nullable=False)
     slot_number = db.Column(db.Integer, nullable=False)
     game_username = db.Column(db.String(50), nullable=False)

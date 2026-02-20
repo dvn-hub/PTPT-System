@@ -502,7 +502,7 @@ def transaction_history():
     history = {}
     for p in payments:
         # Skip orphaned payments (slot deleted)
-        if not p.slot: continue
+        if not p.slot or not p.slot.ticket: continue
 
         # Fallback jika verified_at kosong (pakai detected_at atau now)
         dt = p.verified_at or p.detected_at or datetime.now()
