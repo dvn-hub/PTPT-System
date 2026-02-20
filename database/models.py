@@ -165,3 +165,14 @@ class CustomCommand(Base):
     name = Column(String(100), unique=True)
     response = Column(Text)
     created_at = Column(DateTime, default=lambda: datetime.now(pytz.timezone('Asia/Jakarta')))
+
+class ActionQueue(Base):
+    __tablename__ = 'action_queue'
+    
+    id = Column(Integer, primary_key=True)
+    action_type = Column(String(50), nullable=False) # create_patungan, delete_patungan, remove_member, broadcast
+    payload = Column(Text, nullable=False) # JSON data
+    status = Column(String(20), default='pending') # pending, processing, completed, failed
+    created_by = Column(String(100))
+    created_at = Column(DateTime, default=lambda: datetime.now(pytz.timezone('Asia/Jakarta')))
+    processed_at = Column(DateTime, nullable=True)
