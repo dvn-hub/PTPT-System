@@ -23,7 +23,7 @@ DB_PATH = os.path.join(PARENT_DIR, 'patungan.db')
 FILE_PROMO = os.path.join(PARENT_DIR, 'bot_iklan', 'pesan.txt')
 FILE_SCRIPT = os.path.join(PARENT_DIR, 'bot_script', 'scripts.json')
 FILE_PANELS = os.path.join(PARENT_DIR, 'panels.json')
-FILE_BROADCASTS = os.path.join(PARENT_DIR, 'broadcasts.json')
+FILE_BROADCASTS = os.path.join(PARENT_DIR, 'bot_iklan', 'broadcasts.json')
 
 # --- DEBUG PATH DATABASE (Cek Terminal/Log) ---
 print(f"--> DEBUG DB PATH: {DB_PATH}")
@@ -369,6 +369,9 @@ def broadcast():
 @app.route('/save_broadcast', methods=['POST'])
 def save_broadcast():
     if not session.get('logged_in'): return redirect('/')
+    
+    # Pastikan folder bot_iklan ada
+    os.makedirs(os.path.dirname(FILE_BROADCASTS), exist_ok=True)
     
     template_id = request.form.get('template_id') or secrets.token_hex(4)
     data = {

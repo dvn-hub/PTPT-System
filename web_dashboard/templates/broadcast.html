@@ -36,6 +36,11 @@
             <div class="p-3 rounded mb-3" style="background: rgba(0,0,0,0.3); border-left: 4px solid {{ t.color }};">
                 <div class="fw-bold mb-1">{{ t.title }}</div>
                 <div class="small text-white-50 text-truncate">{{ t.description }}</div>
+                {% if t.image_url %}
+                <div class="mt-2">
+                    <img src="{{ t.image_url }}" class="img-fluid rounded" style="max-height: 100px; object-fit: cover;">
+                </div>
+                {% endif %}
             </div>
             
             <div class="mt-auto">
