@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, session, url_for, g, flash
-import sqlite3, os, requests, json, secrets
+import os, requests, json, secrets
 from datetime import datetime
+from models import db, UserTicket, UserSlot, Patungan, PaymentRecord, CustomCommand
 
 app = Flask(__name__)
 app.secret_key = 'KUNCI_TETAP_DIVINEBLOX_123'
@@ -22,17 +23,10 @@ DB_PATH = os.path.join(PARENT_DIR, 'patungan.db')
 FILE_PROMO = os.path.join(PARENT_DIR, 'bot_iklan', 'pesan.txt')
 FILE_SCRIPT = os.path.join(PARENT_DIR, 'bot_script', 'scripts.json')
 
-def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = sqlite3.connect(DB_PATH)
-        db.row_factory = sqlite3.Row
-    return db
-
-@app.teardown_appcontext
-def close_connection(exception):
-    db = getattr(g, '_database', None)
-    if db is not None: db.close()
+# --- KONFIGURASI DATABASE ---
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_PATH}'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db.init_app(app)
 
 # --- ROUTES AUTH (SAMA KAYAK SEBELUMNYA) ---
 @app.route('/login')
@@ -83,29 +77,36 @@ def callback():
 @app.route('/')
 def index():
     if not session.get('logged_in'): return render_template('login.html')
-    conn = get_db()
     
     try:
         # Ambil omzet dan data lainnya
-        pending = conn.execute("SELECT * FROM payment_records WHERE payment_status='PENDING'").fetchall()
+        pending = PaymentRecord.query.filter_by(payment_status='PENDING').all()
         
         # Ambil daftar custom commands
-        commands = conn.execute("SELECT * FROM custom_commands ORDER BY created_at DESC").fetchall()
+        commands = CustomCommand.query.order_by(CustomCommand.created_at.desc()).all()
 
         # Hitung Omzet Real (Total uang masuk status PAID)
-        omzet_res = conn.execute("SELECT SUM(amount) FROM payment_records WHERE payment_status='PAID'").fetchone()
-        omzet = omzet_res[0] if omzet_res and omzet_res[0] else 0
+        omzet = db.session.query(db.func.sum(PaymentRecord.paid_amount)).filter(PaymentRecord.payment_status == 'PAID').scalar() or 0
 
         # Hitung Statistik untuk Chart
-        paid_count = conn.execute("SELECT COUNT(*) FROM payment_records WHERE payment_status='PAID'").fetchone()[0]
-        rejected_count = conn.execute("SELECT COUNT(*) FROM payment_records WHERE payment_status='REJECTED'").fetchone()[0]
-    except sqlite3.OperationalError:
+        paid_count = PaymentRecord.query.filter_by(payment_status='PAID').count()
+        rejected_count = PaymentRecord.query.filter_by(payment_status='REJECTED').count()
+        
+        # Statistik Baru (Sesuai Instruksi)
+        total_tickets = UserTicket.query.count()
+        open_tickets = UserTicket.query.filter(UserTicket.ticket_status != 'closed').count()
+        total_services = Patungan.query.count()
+    except Exception as e:
+        print(f"Database Error: {e}")
         # Jika tabel belum ada, set default value biar gak error 500
         pending = []
         commands = []
         omzet = 0
         paid_count = 0
         rejected_count = 0
+        total_tickets = 0
+        open_tickets = 0
+        total_services = 0
 
     # Baca file iklan
     teks_iklan = ""
@@ -119,7 +120,10 @@ def index():
                            admin=session,
                            omzet=omzet,
                            paid_count=paid_count,
-                           rejected_count=rejected_count)
+                           rejected_count=rejected_count,
+                           total_tickets=total_tickets,
+                           open_tickets=open_tickets,
+                           total_services=total_services)
 
 # --- FITUR EDIT IKLAN ---
 @app.route('/save_iklan', methods=['POST'])
@@ -155,19 +159,25 @@ def save_script():
 @app.route('/approve/<int:id>', methods=['POST'])
 def approve_payment(id):
     if not session.get('logged_in'): return redirect('/')
-    conn = get_db()
-    conn.execute("UPDATE payment_records SET payment_status='PAID' WHERE id=?", (id,))
-    conn.commit()
-    flash("Pembayaran disetujui!", "success")
+    payment = PaymentRecord.query.get(id)
+    if payment:
+        payment.payment_status = 'PAID'
+        db.session.commit()
+        flash("Pembayaran disetujui!", "success")
+    else:
+        flash("Data pembayaran tidak ditemukan.", "danger")
     return redirect(url_for('index'))
 
 @app.route('/reject/<int:id>', methods=['POST'])
 def reject_payment(id):
     if not session.get('logged_in'): return redirect('/')
-    conn = get_db()
-    conn.execute("UPDATE payment_records SET payment_status='REJECTED' WHERE id=?", (id,))
-    conn.commit()
-    flash("Pembayaran ditolak!", "danger")
+    payment = PaymentRecord.query.get(id)
+    if payment:
+        payment.payment_status = 'REJECTED'
+        db.session.commit()
+        flash("Pembayaran ditolak!", "danger")
+    else:
+        flash("Data pembayaran tidak ditemukan.", "danger")
     return redirect(url_for('index'))
 
 @app.route('/logout')
