@@ -71,7 +71,7 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Pilih Member</label>
-                    <select name="username" id="memberSelect" class="form-select bg-transparent text-white" required disabled>
+                    <select name="slot_number" id="memberSelect" class="form-select bg-transparent text-white" required disabled>
                         <option value="" class="text-dark">-- Pilih Patungan Dulu --</option>
                     </select>
                 </div>
@@ -124,7 +124,7 @@ function loadMembers(productName) {
         .then(data => {
             select.innerHTML = '<option value="" class="text-dark">-- Pilih Member --</option>';
             data.forEach(member => {
-                select.innerHTML += `<option value="${member.username}" class="text-dark">Slot ${member.slot}: ${member.username}</option>`;
+                select.innerHTML += `<option value="${member.slot}" class="text-dark">Slot ${member.slot}: ${member.username}</option>`;
             });
             select.disabled = false;
         });

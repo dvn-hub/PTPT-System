@@ -365,17 +365,17 @@ def admin_remove_member():
     if not session.get('logged_in'): return redirect('/')
     
     product_name = request.form.get('product_name')
-    username = request.form.get('username')
+    slot_number = request.form.get('slot_number')
     
     new_action = ActionQueue(
         action_type='remove_member',
-        payload=json.dumps({"product_name": product_name, "username": username}),
+        payload=json.dumps({"product_name": product_name, "slot_number": slot_number}),
         created_by=session['username']
     )
     db.session.add(new_action)
     db.session.commit()
     
-    flash(f"Perintah Kick Member {username} dari {product_name} dikirim!", "warning")
+    flash(f"Perintah Kick Slot {slot_number} dari {product_name} dikirim!", "warning")
     return redirect(url_for('admin_actions'))
 
 @app.route('/admin/get_members/<product_name>')

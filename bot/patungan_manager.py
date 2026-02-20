@@ -1600,12 +1600,12 @@ class PatunganManager:
                         # Logic Remove Member
                         # Kita gunakan logic manual karena AdminHandler butuh interaction
                         product_name = payload['product_name']
-                        username = payload['username']
+                        slot_number = int(payload['slot_number'])
                         
-                        # Cari slot
+                        # Cari slot by slot_number (Lebih Akurat)
                         stmt_slot = select(UserSlot).where(
                             UserSlot.patungan_version == product_name,
-                            (UserSlot.game_username == username) | (UserSlot.display_name == username),
+                            UserSlot.slot_number == slot_number,
                             UserSlot.slot_status.in_(['booked', 'waiting_payment', 'paid'])
                         )
                         res_slot = await self.bot.session.execute(stmt_slot)
@@ -1632,18 +1632,24 @@ class PatunganManager:
                             for s in slots_to_shift:
                                 s.slot_number -= 1
                                 
-                            # Update patungan count
+                            # Update patungan count (Recount biar akurat)
+                            from sqlalchemy import func
+                            stmt_count = select(func.count(UserSlot.id)).where(
+                                UserSlot.patungan_version == product_name,
+                                UserSlot.slot_status.in_(['booked', 'waiting_payment', 'paid'])
+                            )
+                            count_res = await self.bot.session.execute(stmt_count)
+                            new_count = count_res.scalar() or 0
+
                             patungan = await get_patungan(self.bot.session, product_name)
                             if patungan:
-                                await self.bot.session.refresh(patungan)
-                                if patungan.current_slots > 0:
-                                    patungan.current_slots -= 1
+                                patungan.current_slots = new_count
                             
                             await self.bot.session.commit()
                             await self.update_list_channel()
-                            logger.info(f"Remote action: Removed {username} from {product_name}")
+                            logger.info(f"Remote action: Removed Slot {slot_number} from {product_name}")
                         else:
-                            logger.warning(f"Remote action failed: Member {username} not found in {product_name}")
+                            logger.warning(f"Remote action failed: Slot {slot_number} not found in {product_name}")
 
                     elif action.action_type == 'broadcast':
                         # Logic Broadcast
