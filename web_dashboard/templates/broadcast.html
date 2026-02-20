@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <div>
+        <h2 class="fw-bold">Broadcast Iklan</h2>
+        <p class="text-white-50">Kelola dan kirim pesan broadcast ke berbagai channel.</p>
+    </div>
+    <button class="btn btn-success btn-glass" onclick="openModal()">
+        <i class="fas fa-plus me-2"></i>Buat Template Baru
+    </button>
+</div>
+
+<div class="row g-4">
+    {% for t in templates %}
+    <div class="col-md-6 col-xl-4">
+        <div class="glass-card h-100 d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <h5 class="fw-bold text-truncate" style="max-width: 70%;">{{ t.name }}</h5>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-glass" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        <li><a class="dropdown-item" href="#" onclick='editTemplate({{ t|tojson }})'><i class="fas fa-edit me-2"></i>Edit</a></li>
+                        <li>
+                            <form action="/delete_broadcast/{{ t.id }}" method="POST" onsubmit="return confirm('Hapus template ini?');">
+                                <button class="dropdown-item text-danger"><i class="fas fa-trash me-2"></i>Hapus</button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Preview Mini -->
+            <div class="p-3 rounded mb-3" style="background: rgba(0,0,0,0.3); border-left: 4px solid {{ t.color }};">
+                <div class="fw-bold mb-1">{{ t.title }}</div>
+                <div class="small text-white-50 text-truncate">{{ t.description }}</div>
+            </div>
+            
+            <div class="mt-auto">
+                <div class="small text-white-50 mb-2">
+                    <i class="fas fa-hashtag me-1"></i> Target: {{ t.channels.split(',')|length }} Channel
+                </div>
+                <form action="/send_broadcast/{{ t.id }}" method="POST" onsubmit="return confirm('Kirim broadcast ini sekarang?');">
+                    <button class="btn btn-primary w-100"><i class="fas fa-paper-plane me-2"></i>Kirim Broadcast</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center py-5">
+        <div class="text-white-50">
+            <i class="fas fa-bullhorn fa-3x mb-3 opacity-50"></i>
+            <p>Belum ada template broadcast. Buat baru yuk!</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Modal Template -->
+<div class="modal fade" id="broadcastModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content glass-card border-0">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title" id="modalTitle">Buat Template Broadcast</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/save_broadcast" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="template_id" id="template_id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Nama Template (Untuk Admin)</label>
+                        <input type="text" name="name" id="name" class="form-control bg-transparent text-white" placeholder="Contoh: Iklan Pagi Server A" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Target Channel ID (Pisahkan dengan koma)</label>
+                        <input type="text" name="channels" id="channels" class="form-control bg-transparent text-white" placeholder="123456789, 987654321" required>
+                        <small class="text-white-50">Klik kanan channel di Discord -> Copy ID</small>
+                    </div>
+                    
+                    <hr class="border-secondary">
+                    <h6 class="mb-3 text-info">Isi Pesan (Embed)</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label class="form-label">Judul Embed</label>
+                                <input type="text" name="title" id="title" class="form-control bg-transparent text-white" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Warna Samping</label>
+                                <input type="color" name="color" id="color" class="form-control form-control-color w-100" value="#3498db">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Deskripsi</label>
+                        <textarea name="description" id="description" class="form-control bg-transparent text-white" rows="5" required></textarea>
+                        <small class="text-white-50">Support Markdown Discord (**bold**, *italic*, dll)</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">URL Gambar (Opsional)</label>
+                        <input type="text" name="image_url" id="image_url" class="form-control bg-transparent text-white" placeholder="https://...">
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success">Simpan Template</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+const modal = new bootstrap.Modal(document.getElementById('broadcastModal'));
+
+function openModal() {
+    document.getElementById('modalTitle').innerText = 'Buat Template Broadcast';
+    document.getElementById('template_id').value = '';
+    document.getElementById('name').value = '';
+    document.getElementById('channels').value = '';
+    document.getElementById('title').value = '';
+    document.getElementById('description').value = '';
+    document.getElementById('image_url').value = '';
+    document.getElementById('color').value = '#3498db';
+    modal.show();
+}
+
+function editTemplate(data) {
+    document.getElementById('modalTitle').innerText = 'Edit Template Broadcast';
+    document.getElementById('template_id').value = data.id;
+    document.getElementById('name').value = data.name;
+    document.getElementById('channels').value = data.channels;
+    document.getElementById('title').value = data.title;
+    document.getElementById('description').value = data.description;
+    document.getElementById('image_url').value = data.image_url || '';
+    document.getElementById('color').value = data.color;
+    modal.show();
+}
+</script>
+{% endblock %}
