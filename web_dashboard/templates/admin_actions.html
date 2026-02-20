@@ -119,13 +119,14 @@ function loadMembers(productName) {
         return;
     }
     
-    fetch(`/admin/get_members/${productName}`)
+    fetch(`/admin/get_members/${encodeURIComponent(productName)}`)
         .then(response => response.json())
         .then(data => {
-            select.innerHTML = '<option value="" class="text-dark">-- Pilih Member --</option>';
+            let options = '<option value="" class="text-dark">-- Pilih Member --</option>';
             data.forEach(member => {
-                select.innerHTML += `<option value="${member.slot}" class="text-dark">Slot ${member.slot}: ${member.username}</option>`;
+                options += `<option value="${member.slot}" class="text-dark">Slot ${member.slot}: ${member.username}</option>`;
             });
+            select.innerHTML = options;
             select.disabled = false;
         });
 }

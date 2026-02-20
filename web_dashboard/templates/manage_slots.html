@@ -57,7 +57,7 @@
                         {% endif %}
                     </td>
                     <td class="text-end">
-                        <button class="btn btn-sm btn-glass" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ p.id }}" aria-expanded="false" onclick='loadSlotDetails({{ p.product_name|tojson }}, "{{ p.id }}")'>
+                        <button class="btn btn-sm btn-glass" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ p.id }}" aria-expanded="false" data-product="{{ p.product_name }}" onclick="loadSlotDetails(this.getAttribute('data-product'), '{{ p.id }}')">
                             <i class="fas fa-chevron-down me-1"></i> Detail
                         </button>
                     </td>
@@ -99,7 +99,7 @@ function loadSlotDetails(productName, id) {
         </div>
     `;
 
-    fetch(`/admin/get_patungan_slots/${productName}`)
+    fetch(`/admin/get_patungan_slots/${encodeURIComponent(productName)}`)
         .then(response => response.json())
         .then(data => {
             if (data.length === 0) {
