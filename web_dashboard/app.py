@@ -28,7 +28,8 @@ DB_PATH = os.path.join(PARENT_DIR, 'patungan.db')
 FILE_PROMO = os.path.join(PARENT_DIR, 'bot_iklan', 'pesan.txt')
 FILE_SCRIPT = os.path.join(PARENT_DIR, 'bot_script', 'scripts.json')
 FILE_PANELS = os.path.join(PARENT_DIR, 'panels.json')
-FILE_BROADCASTS = os.path.join(PARENT_DIR, 'bot_iklan', 'config.json')
+FILE_BROADCASTS = os.path.join(PARENT_DIR, 'bot_iklan', 'broadcasts.json')
+FILE_CONFIG_IKLAN = os.path.join(PARENT_DIR, 'bot_iklan', 'config.json')
 
 # --- DEBUG PATH DATABASE (Cek Terminal/Log) ---
 print(f"--> DEBUG DB PATH: {DB_PATH}")
@@ -69,98 +70,109 @@ def load_panels():
     return defaults
 
 def load_broadcasts():
+    templates = []
+    
+    # 1. Cek file dedicated broadcasts.json (Prioritas Utama - Data yang sudah disave user)
     if os.path.exists(FILE_BROADCASTS):
-        templates = []
         try:
-            with open(FILE_BROADCASTS, 'r', encoding='utf-8') as f:
+            with open(FILE_BROADCASTS, 'r', encoding='utf-8-sig') as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    return data
+        except Exception as e:
+            print(f"❌ Error loading broadcasts.json: {e}")
+
+    # 2. Jika kosong, coba import dari config.json (Auto-Import dari Bot Iklan)
+    if os.path.exists(FILE_CONFIG_IKLAN):
+        try:
+            with open(FILE_CONFIG_IKLAN, 'r', encoding='utf-8-sig') as f:
                 data = json.load(f)
                 
-                # Helper to normalize item
+                # Helper normalize
                 def normalize(item, idx_or_key):
+                    if not isinstance(item, (str, dict)): return None
+                    if isinstance(item, (bool, int, float)): return None
+                    if isinstance(item, str) and len(item) < 5: return None
+                    
+                    template = {
+                        "id": str(idx_or_key),
+                        "name": f"Imported {idx_or_key}",
+                        "title": "📢 Broadcast",
+                        "description": "",
+                        "color": "#3498db",
+                        "channels": "",
+                        "image_url": ""
+                    }
+                    
                     if isinstance(item, str):
-                        return {
-                            "id": str(idx_or_key),
-                            "name": f"Message {idx_or_key}",
-                            "title": "📢 Broadcast",
-                            "description": item,
-                            "color": "#3498db",
-                            "channels": "",
-                            "image_url": ""
-                        }
+                        template["description"] = item
                     elif isinstance(item, dict):
-                        # Ensure defaults
-                        if 'id' not in item: item['id'] = str(idx_or_key)
-                        if 'name' not in item: item['name'] = item.get('title', f"Message {idx_or_key}")
-                        if 'title' not in item: item['title'] = "📢 Broadcast"
-                        if 'color' not in item: item['color'] = "#3498db"
-                        if 'channels' not in item: item['channels'] = ""
-                        if 'image_url' not in item: item['image_url'] = item.get('image', '')
+                        if 'id' in item: template['id'] = str(item['id'])
+                        if 'name' in item: template['name'] = item['name']
+                        if 'title' in item: template['title'] = item['title']
+                        if 'color' in item: template['color'] = item['color']
+                        if 'channels' in item: template['channels'] = item['channels']
+                        if 'image' in item: template['image_url'] = item['image']
+                        if 'image_url' in item: template['image_url'] = item['image_url']
                         
-                        # Map content/text/body to description if missing
-                        if 'description' not in item:
-                            item['description'] = item.get('content', item.get('text', item.get('body', '')))
+                        for k in ['description', 'content', 'text', 'body', 'message']:
+                            if k in item and item[k]:
+                                template['description'] = item[k]
+                                break
                         
-                        # Handle embed structure if present
                         if 'embed' in item and isinstance(item['embed'], dict):
                             embed = item['embed']
-                            if not item['title'] or item['title'] == "📢 Broadcast":
-                                item['title'] = embed.get('title', "📢 Broadcast")
-                            if not item['description']:
-                                item['description'] = embed.get('description', '')
-                            if not item['color'] or item['color'] == "#3498db":
+                            if template['title'] == "📢 Broadcast": template['title'] = embed.get('title', "📢 Broadcast")
+                            if not template['description']: template['description'] = embed.get('description', '')
+                            if template['color'] == "#3498db":
                                 col = embed.get('color')
                                 if col:
                                     try:
-                                        if isinstance(col, int):
-                                            item['color'] = f"#{col:06x}"
-                                        else:
-                                            item['color'] = str(col)
+                                        if isinstance(col, int): template['color'] = f"#{col:06x}"
+                                        else: template['color'] = str(col)
                                     except: pass
-                            if not item['image_url']:
+                            if not template['image_url']:
                                 img = embed.get('image')
-                                if isinstance(img, dict):
-                                    item['image_url'] = img.get('url', '')
-                                elif isinstance(img, str):
-                                    item['image_url'] = img
+                                if isinstance(img, dict): template['image_url'] = img.get('url', '')
+                                elif isinstance(img, str): template['image_url'] = img
 
-                        return item
-                    return None
+                    if not template['description'] and not template['image_url'] and template['title'] == "📢 Broadcast":
+                        return None
+                    return template
 
-                # Handle Format List []
+                # Extraction Logic
                 if isinstance(data, list):
                     for i, item in enumerate(data):
                         norm = normalize(item, i)
                         if norm: templates.append(norm)
-                
-                # Handle Format Dict {}
                 elif isinstance(data, dict):
-                    target_data = data
-                    # Try to find a list/dict of messages
-                    for key in ['messages', 'broadcasts', 'ads', 'promos']:
-                        if key in data and isinstance(data[key], (dict, list)):
-                            target_data = data[key]
+                    # Check specific keys first
+                    target_list = None
+                    for key in ['messages', 'broadcasts', 'ads', 'promos', 'embeds']:
+                        if key in data and isinstance(data[key], list):
+                            target_list = data[key]
                             break
                     
-                    if isinstance(target_data, list):
-                        for i, item in enumerate(target_data):
+                    if target_list:
+                        for i, item in enumerate(target_list):
                             norm = normalize(item, i)
                             if norm: templates.append(norm)
-                    elif isinstance(target_data, dict):
-                        for k, v in target_data.items():
+                    else:
+                        # Iterate values
+                        for k, v in data.items():
                             norm = normalize(v, k)
                             if norm: templates.append(norm)
                             
-                if templates: return templates
         except Exception as e:
-            print(f"❌ Error loading broadcasts.json: {e}")
+            print(f"❌ Error importing from config.json: {e}")
 
     # Fallback: Ambil dari pesan.txt jika json kosong/gagal
-    if os.path.exists(FILE_PROMO):
+    if not templates and os.path.exists(FILE_PROMO):
         try:
-            with open(FILE_PROMO, 'r', encoding='utf-8') as f:
+            with open(FILE_PROMO, 'r', encoding='utf-8-sig') as f:
                 content = f.read().strip()
                 if content:
-                    return [{
+                    templates.append({
                         "id": "legacy_promo",
                         "name": "Legacy Promo (pesan.txt)",
                         "channels": "",
@@ -168,10 +180,10 @@ def load_broadcasts():
                         "description": content,
                         "image_url": "",
                         "color": "#3498db"
-                    }]
+                    })
         except: pass
             
-    return []
+    return templates
 
 # --- ROUTES AUTH (SAMA KAYAK SEBELUMNYA) ---
 @app.route('/login')
@@ -478,7 +490,27 @@ def delete_command(id):
 @app.route('/transactions')
 def transaction_history():
     if not session.get('logged_in'): return redirect('/')
-    return "<h1>Halaman Riwayat Transaksi (Dalam Perbaikan)</h1><a href='/'>Kembali ke Home</a>"
+    
+    # Ambil data transaksi yang sudah verified/paid
+    # Urutkan dari yang terbaru
+    payments = PaymentRecord.query.filter(
+        PaymentRecord.payment_status.in_(['verified', 'paid'])
+    ).order_by(PaymentRecord.verified_at.desc()).all()
+    
+    # Grouping by Date (YYYY-MM-DD)
+    history = {}
+    for p in payments:
+        # Fallback jika verified_at kosong (pakai detected_at atau now)
+        dt = p.verified_at or p.detected_at or datetime.now()
+        date_key = dt.strftime('%Y-%m-%d')
+        
+        if date_key not in history:
+            history[date_key] = {'total_omzet': 0, 'items': []}
+        
+        history[date_key]['items'].append(p)
+        history[date_key]['total_omzet'] += p.paid_amount
+        
+    return render_template('transactions.html', admin=session, history=history)
 
 @app.route('/broadcast')
 def broadcast():

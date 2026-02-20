@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="mb-4">
+    <h2 class="fw-bold">Riwayat Transaksi</h2>
+    <p class="text-white-50">Daftar transaksi yang telah diverifikasi dan masuk ke database.</p>
+</div>
+
+<div class="accordion" id="accordionHistory">
+    {% for date, data in history.items() %}
+    <div class="glass-card mb-3 p-0 overflow-hidden">
+        <div class="accordion-header" id="heading{{ loop.index }}">
+            <button class="accordion-button collapsed bg-transparent text-white shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}">
+                <div class="d-flex justify-content-between w-100 align-items-center pe-3">
+                    <div>
+                        <i class="fas fa-calendar-alt me-2 text-info"></i>
+                        <span class="fw-bold">{{ date }}</span>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-success me-2">Rp {{ "{:,}".format(data.total_omzet) }}</span>
+                        <span class="badge bg-secondary">{{ data.items|length }} Transaksi</span>
+                    </div>
+                </div>
+            </button>
+        </div>
+        <div id="collapse{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#accordionHistory">
+            <div class="accordion-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-glass align-middle mb-0 table-hover">
+                        <thead class="bg-dark bg-opacity-25">
+                            <tr>
+                                <th class="ps-4">Waktu</th>
+                                <th>Buyer</th>
+                                <th>Item</th>
+                                <th>Nominal</th>
+                                <th>Handler</th>
+                                <th class="text-end pe-4">Bukti</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in data.items %}
+                            <tr>
+                                <td class="ps-4 text-white-50">
+                                    {{ p.verified_at.strftime('%H:%M') if p.verified_at else '-' }}
+                                </td>
+                                <td>
+                                    <div class="fw-bold">{{ p.slot.game_username if p.slot else 'Unknown' }}</div>
+                                    <small class="text-white-50">
+                                        {% if p.slot and p.slot.ticket %}
+                                            {{ p.slot.ticket.discord_username }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info text-dark">
+                                        {{ p.slot.patungan_version if p.slot else 'Unknown' }}
+                                    </span>
+                                </td>
+                                <td class="text-success fw-bold">
+                                    Rp {{ "{:,}".format(p.paid_amount) }}
+                                </td>
+                                <td>
+                                    {{ p.verified_by or 'System' }}
+                                </td>
+                                <td class="text-end pe-4">
+                                    {% if p.proof_image_url %}
+                                    <a href="{{ p.proof_image_url }}" target="_blank" class="btn btn-sm btn-glass">
+                                        <i class="fas fa-image"></i>
+                                    </a>
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-white-50">
+        <i class="fas fa-history fa-3x mb-3 opacity-50"></i>
+        <p>Belum ada riwayat transaksi.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

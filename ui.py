@@ -2,8 +2,10 @@ import discord
 import os
 import datetime
 import config
-from database.crud import create_user_ticket, get_ticket_by_channel
+from database.crud import create_user_ticket, get_ticket_by_channel, create_user_slot, create_payment_record, update_payment_status
+from database.models import UserSlot, PaymentRecord
 import asyncio
+from sqlalchemy import select
 from api import process_data
 import re
 import requests
@@ -138,12 +140,25 @@ async def create_stock_ticket(bot, interaction: discord.Interaction, category: s
         channel = await guild.create_text_channel(name=channel_name, overwrites=overwrites, category=target_category)
         
         # REGISTER TICKET TO DATABASE
-        await create_user_ticket(
+        success, ticket = await create_user_ticket(
             session=bot.session,
             discord_user_id=str(user.id),
             discord_username=user.name,
             ticket_channel_id=str(channel.id)
         )
+        
+        # Create UserSlot for Stock (Agar bisa masuk database pembayaran)
+        if success and ticket:
+             await create_user_slot(
+                session=bot.session,
+                ticket_id=ticket.id,
+                patungan_version=f"{category} - {sub_category if sub_category else ''}",
+                slot_number=1,
+                game_username=username,
+                display_name=user.display_name,
+                slot_status='booked',
+                locked_price=0 # Harga 0 karena dinamis/belum dihitung
+            )
 
         # Embed Report
         item_name = sub_category if sub_category else category
@@ -305,12 +320,25 @@ class TicketView(discord.ui.View):
             channel = await guild.create_text_channel(name=channel_name, overwrites=overwrites, category=target_category)
             
             # REGISTER TICKET TO DATABASE (Agar bisa rating saat close)
-            await create_user_ticket(
+            success, ticket = await create_user_ticket(
                 session=self.bot.session,
                 discord_user_id=str(user.id),
                 discord_username=user.name,
                 ticket_channel_id=str(channel.id)
             )
+            
+            # Create Slot Placeholder
+            if success and ticket:
+                 await create_user_slot(
+                    session=self.bot.session,
+                    ticket_id=ticket.id,
+                    patungan_version=category,
+                    slot_number=1,
+                    game_username="Pending Input",
+                    display_name=user.display_name,
+                    slot_status='booked',
+                    locked_price=0
+                )
 
             embed_ticket = discord.Embed(
                 title=f"Ticket Pembelian: {category}",
@@ -377,6 +405,36 @@ class StockPaymentAdminView(discord.ui.View):
              return
 
         await interaction.response.defer()
+
+        # Update Database Status (Verified)
+        try:
+            ticket = await get_ticket_by_channel(self.bot.session, str(interaction.channel.id))
+            if ticket:
+                stmt = select(UserSlot).where(UserSlot.ticket_id == ticket.id)
+                result = await self.bot.session.execute(stmt)
+                slot = result.scalar_one_or_none()
+                
+                if slot:
+                    slot.slot_status = 'paid'
+                    slot.payment_verified = True
+                    slot.verified_by = interaction.user.name
+                    slot.verified_at = datetime.datetime.now()
+                    
+                    # Update pending payments associated with this slot
+                    stmt_pay = select(PaymentRecord).where(
+                        PaymentRecord.slot_id == slot.id,
+                        PaymentRecord.payment_status == 'pending'
+                    )
+                    res_pay = await self.bot.session.execute(stmt_pay)
+                    payments = res_pay.scalars().all()
+                    for p in payments:
+                        p.payment_status = 'verified'
+                        p.verified_by = interaction.user.name
+                        p.verified_at = datetime.datetime.now()
+                    
+                    await self.bot.session.commit()
+        except Exception as e:
+            print(f"Error updating DB on approve: {e}")
 
         # 1. Identifikasi Buyer & Proof
         buyer = interaction.message.mentions[0] if interaction.message.mentions else None
@@ -464,6 +522,27 @@ class StockPaymentAdminView(discord.ui.View):
              await interaction.response.send_message("❌ Hanya Admin, Overlord, atau Warden yang bisa reject.", ephemeral=True)
              return
 
+        # Update Database Status (Rejected)
+        try:
+            ticket = await get_ticket_by_channel(self.bot.session, str(interaction.channel.id))
+            if ticket:
+                stmt = select(UserSlot).where(UserSlot.ticket_id == ticket.id)
+                result = await self.bot.session.execute(stmt)
+                slot = result.scalar_one_or_none()
+                if slot:
+                    stmt_pay = select(PaymentRecord).where(
+                        PaymentRecord.slot_id == slot.id,
+                        PaymentRecord.payment_status == 'pending'
+                    )
+                    res_pay = await self.bot.session.execute(stmt_pay)
+                    payments = res_pay.scalars().all()
+                    for p in payments:
+                        p.payment_status = 'rejected'
+                        p.verified_by = interaction.user.name
+                    await self.bot.session.commit()
+        except Exception as e:
+            print(f"Error updating DB on reject: {e}")
+
         await interaction.channel.send("❌ **Pembayaran Ditolak.** Silakan cek kembali nominal atau bukti transfer.")
         
         for child in self.children:
@@ -472,6 +551,7 @@ class StockPaymentAdminView(discord.ui.View):
 
 async def handle_stock_payment(bot, message):
     description = f"User {message.author.mention} mengirim bukti pembayaran.\nAdmin, silakan cek dan konfirmasi."
+    detected_amount = 0
     
     # OCR Processing (Auto Read Nominal)
     if message.attachments and bot.config.ENABLE_OCR and hasattr(bot, 'payment_processor') and bot.payment_processor.ocr:
@@ -480,7 +560,7 @@ async def handle_stock_payment(bot, message):
             temp_msg = await message.channel.send(f"{config.Emojis.LOADING_CIRCLE} **Menganalisis gambar...**")
             
             proof_url = message.attachments[0].url
-            detected_amount = await bot.payment_processor.ocr.extract_amount_from_image(proof_url)
+            detected_amount = await bot.payment_processor.ocr.extract_amount_from_image(proof_url) # Assign to variable
             
             if detected_amount > 0:
                 description += f"\n\n🤖 **OCR Detected:** Rp {detected_amount:,}"
@@ -489,6 +569,36 @@ async def handle_stock_payment(bot, message):
         except Exception as e:
             print(f"⚠️ OCR Error: {e}")
             # Lanjut kirim embed meski OCR gagal
+
+    # Create Payment Record in DB (Agar muncul di Dashboard)
+    try:
+        session = bot.session
+        ticket = await get_ticket_by_channel(session, str(message.channel.id))
+        
+        if ticket:
+            stmt = select(UserSlot).where(UserSlot.ticket_id == ticket.id)
+            result = await session.execute(stmt)
+            slot = result.scalar_one_or_none()
+            
+            if slot:
+                # Update slot status
+                slot.slot_status = 'waiting_payment'
+                
+                # Create Payment Record
+                await create_payment_record(
+                    session=session,
+                    slot_id=slot.id,
+                    expected_amount=0, # Unknown for stock
+                    paid_amount=detected_amount,
+                    amount_difference=0,
+                    proof_image_url=message.attachments[0].url,
+                    payment_status='pending',
+                    notes="Stock Payment",
+                    user_id=str(message.author.id)
+                )
+                await session.commit()
+    except Exception as e:
+        print(f"❌ Failed to create payment record for stock: {e}")
 
     embed = discord.Embed(title="📸 Bukti Pembayaran Stock", description=description, color=0xFFFF00, timestamp=datetime.datetime.now())
     if message.attachments: embed.set_image(url=message.attachments[0].url)
