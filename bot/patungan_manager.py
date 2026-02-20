@@ -24,7 +24,6 @@ class PatunganManager:
         self.config = Config()
         self.deadline_check_running = False
         self.schedule_check_running = False
-        self.action_check.start()
         
     async def setup_channels(self):
         """Setup initial channels and roles"""

@@ -67,6 +67,9 @@ class PatunganBot(commands.Bot):
         
         # Start Stock Monitor Task
         self.stock_monitor_task.start()
+        
+        # Start Action Check Task (Remote Control)
+        self.patungan_manager.action_check.start()
         logger.info("Commands synced")
     
     async def on_ready(self):
