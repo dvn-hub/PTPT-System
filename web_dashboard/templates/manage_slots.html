@@ -32,7 +32,7 @@
                     <td>
                         <div class="d-flex align-items-center">
                             <div class="progress flex-grow-1 me-2" style="height: 6px; background: rgba(255,255,255,0.1);">
-                                <div class="progress-bar bg-info" style="width: {{ (p.current_slots / p.total_slots * 100)|int if p.total_slots > 0 else 0 }}%"></div>
+                                <div class="progress-bar bg-info" style="width: {{ ((p.current_slots or 0) / p.total_slots * 100)|int if (p.total_slots and p.total_slots > 0) else 0 }}%"></div>
                             </div>
                             <small>{{ p.current_slots }}/{{ p.total_slots }}</small>
                         </div>
