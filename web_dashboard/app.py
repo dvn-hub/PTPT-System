@@ -167,6 +167,55 @@ def stock_panel():
     if not session.get('logged_in'): return redirect('/')
     return "<h1>Halaman Stock Panel (Dalam Perbaikan)</h1><a href='/'>Kembali ke Home</a>"
 
+@app.route('/check_db')
+def check_db():
+    if not session.get('logged_in'): return redirect('/')
+    
+    import sqlite3
+    info = []
+    info.append(f"<h3>Database Debug Info</h3>")
+    info.append(f"<b>Configured Path:</b> {DB_PATH}")
+    
+    if os.path.exists(DB_PATH):
+        size = os.path.getsize(DB_PATH)
+        info.append(f"<b>Status:</b> File FOUND ✅")
+        info.append(f"<b>Size:</b> {size} bytes")
+        try:
+            info.append(f"<b>Permissions:</b> {oct(os.stat(DB_PATH).st_mode)[-3:]}")
+        except:
+            info.append(f"<b>Permissions:</b> Unknown")
+        
+        try:
+            # Cek isi tabel via Raw SQLite
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            
+            # List Tables
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+            tables = [t[0] for t in cursor.fetchall()]
+            info.append(f"<b>Tables in DB:</b> {', '.join(tables)}")
+            
+            # Cek jumlah data
+            stats = []
+            for table in ['patungan', 'user_tickets', 'payment_records']:
+                if table in tables:
+                    cursor.execute(f"SELECT count(*) FROM {table}")
+                    count = cursor.fetchone()[0]
+                    stats.append(f"{table}: {count} rows")
+                else:
+                    stats.append(f"{table}: MISSING ❌")
+            
+            info.append(f"<b>Data Counts:</b> <br>" + "<br>".join(stats))
+            conn.close()
+            
+        except Exception as e:
+            info.append(f"<b>Error Reading DB:</b> {str(e)}")
+    else:
+        info.append(f"<b>Status:</b> File NOT FOUND ❌")
+        info.append("Flask mungkin membuat file database baru yang kosong.")
+        
+    return "<br>".join(info)
+
 # --- FITUR EDIT IKLAN ---
 @app.route('/save_iklan', methods=['POST'])
 def save_iklan():
