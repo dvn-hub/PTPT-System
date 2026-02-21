@@ -670,10 +670,59 @@ def save_ads_config():
 def save_broadcast():
     if not session.get('logged_in'): return redirect('/')
     
-    # Pastikan folder bot_iklan ada
-    os.makedirs(os.path.dirname(FILE_BROADCASTS), exist_ok=True)
+    template_id = request.form.get('template_id')
     
-    template_id = request.form.get('template_id') or secrets.token_hex(4)
+    # --- 1. HANDLE AUTO ADS (CONFIG.JSON) ---
+    # Jika yang diedit adalah panel Iklan Otomatis
+    if template_id and template_id.startswith('auto_ads_'):
+        real_id = template_id.replace('auto_ads_', '')
+        description = request.form.get('description')
+        
+        if not os.path.exists(FILE_CONFIG_IKLAN):
+            flash("Config iklan tidak ditemukan.", "danger")
+            return redirect(url_for('broadcast'))
+            
+        try:
+            with open(FILE_CONFIG_IKLAN, 'r', encoding='utf-8-sig') as f:
+                config = json.load(f)
+            
+            updated = False
+            if 'targets' in config and isinstance(config['targets'], list):
+                for t in config['targets']:
+                    if str(t.get('id')) == real_id:
+                        # Update Pesan Khusus
+                        if description and description.strip():
+                            t['pesan_khusus'] = [line.rstrip() for line in description.split('\n')]
+                        else:
+                            # Hapus key jika kosong (kembali ke default)
+                            if 'pesan_khusus' in t: del t['pesan_khusus']
+                        updated = True
+                        break
+            
+            if updated:
+                with open(FILE_CONFIG_IKLAN, 'w', encoding='utf-8') as f:
+                    json.dump(config, f, indent=4, ensure_ascii=False)
+                flash("Iklan Otomatis berhasil diupdate! Bot akan auto-reload.", "success")
+            else:
+                flash("Target iklan tidak ditemukan di config.", "warning")
+                
+        except Exception as e:
+            flash(f"Gagal update config: {e}", "danger")
+            
+        return redirect(url_for('broadcast'))
+
+    # --- 2. HANDLE MANUAL BROADCAST (BROADCASTS.JSON) ---
+    # Load HANYA broadcasts.json (Raw) agar tidak tercampur dengan config bot
+    templates = []
+    if os.path.exists(FILE_BROADCASTS):
+        try:
+            with open(FILE_BROADCASTS, 'r', encoding='utf-8-sig') as f:
+                templates = json.load(f)
+                if not isinstance(templates, list): templates = []
+        except: templates = []
+    
+    if not template_id: template_id = secrets.token_hex(4)
+    
     data = {
         'id': template_id,
         'name': request.form.get('name'),
@@ -684,17 +733,18 @@ def save_broadcast():
         'color': request.form.get('color', '#3498db')
     }
     
-    templates = load_broadcasts()
-    # Update existing or add new
-    updated = False
+    # Update or Append
+    found = False
     for i, t in enumerate(templates):
-        if t['id'] == template_id:
+        if t.get('id') == template_id:
             templates[i] = data
-            updated = True
+            found = True
             break
-    if not updated:
+    if not found:
         templates.append(data)
         
+    # Save
+    os.makedirs(os.path.dirname(FILE_BROADCASTS), exist_ok=True)
     with open(FILE_BROADCASTS, 'w', encoding='utf-8') as f:
         json.dump(templates, f, indent=4)
         
@@ -704,11 +754,30 @@ def save_broadcast():
 @app.route('/delete_broadcast/<id>', methods=['POST'])
 def delete_broadcast(id):
     if not session.get('logged_in'): return redirect('/')
-    templates = load_broadcasts()
-    templates = [t for t in templates if t['id'] != id]
-    with open(FILE_BROADCASTS, 'w', encoding='utf-8') as f:
-        json.dump(templates, f, indent=4)
-    flash("Template berhasil dihapus.", "success")
+    
+    # Cegah penghapusan Auto Ads dari tombol delete biasa
+    if id.startswith('auto_ads_'):
+        flash("Iklan Otomatis tidak bisa dihapus dari sini. Edit config.json manual jika ingin menghapus target.", "warning")
+        return redirect(url_for('broadcast'))
+        
+    # Load HANYA broadcasts.json
+    templates = []
+    if os.path.exists(FILE_BROADCASTS):
+        try:
+            with open(FILE_BROADCASTS, 'r', encoding='utf-8-sig') as f:
+                templates = json.load(f)
+                if not isinstance(templates, list): templates = []
+        except: pass
+        
+    new_templates = [t for t in templates if t.get('id') != id]
+    
+    try:
+        with open(FILE_BROADCASTS, 'w', encoding='utf-8') as f:
+            json.dump(new_templates, f, indent=4)
+        flash("Template berhasil dihapus.", "success")
+    except Exception as e:
+        flash(f"Gagal hapus template: {e}", "danger")
+        
     return redirect(url_for('broadcast'))
 
 @app.route('/send_broadcast/<id>', methods=['POST'])
