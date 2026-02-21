@@ -544,7 +544,89 @@ def transaction_history():
 def broadcast():
     if not session.get('logged_in'): return redirect('/')
     templates = load_broadcasts()
-    return render_template('broadcast.html', admin=session, templates=templates)
+    
+    # --- LOAD AUTO ADS CONFIG ---
+    ads_data = None
+    if os.path.exists(FILE_CONFIG_IKLAN):
+        try:
+            with open(FILE_CONFIG_IKLAN, 'r', encoding='utf-8') as f:
+                raw = json.load(f)
+                ads_data = {
+                    "default": "",
+                    "targets": []
+                }
+                # Parse Default Message
+                if 'pesan_default' in raw and isinstance(raw['pesan_default'], list):
+                    ads_data['default'] = "\n".join(raw['pesan_default'])
+                
+                # Parse Targets
+                if 'targets' in raw and isinstance(raw['targets'], list):
+                    for t in raw['targets']:
+                        t_obj = {
+                            "id": t.get('id'),
+                            "nama": t.get('nama', 'Unknown'),
+                            "delay": t.get('delay_min', 3600),
+                            "message": ""
+                        }
+                        if 'pesan_khusus' in t and isinstance(t['pesan_khusus'], list):
+                            t_obj['message'] = "\n".join(t['pesan_khusus'])
+                        ads_data['targets'].append(t_obj)
+        except Exception as e:
+            print(f"Error loading ads config: {e}")
+            
+    return render_template('broadcast.html', admin=session, templates=templates, ads_data=ads_data)
+
+@app.route('/save_ads_config', methods=['POST'])
+def save_ads_config():
+    if not session.get('logged_in'): return redirect('/')
+    
+    if not os.path.exists(FILE_CONFIG_IKLAN):
+        flash("File config.json tidak ditemukan.", "danger")
+        return redirect(url_for('broadcast'))
+        
+    try:
+        with open(FILE_CONFIG_IKLAN, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+            
+        # 1. Save Default Message
+        default_msg = request.form.get('default_message')
+        if default_msg is not None:
+            # Split lines and remove \r
+            lines = [l.rstrip() for l in default_msg.split('\n')]
+            config['pesan_default'] = lines
+            
+        # 2. Save Targets
+        if 'targets' in config:
+            for t in config['targets']:
+                tid = str(t.get('id'))
+                
+                # Save Pesan Khusus
+                msg_key = f"msg_{tid}"
+                if msg_key in request.form:
+                    raw = request.form.get(msg_key)
+                    if raw and raw.strip():
+                        t['pesan_khusus'] = [l.rstrip() for l in raw.split('\n')]
+                    else:
+                        # If empty, delete key to use default
+                        if 'pesan_khusus' in t: del t['pesan_khusus']
+                
+                # Save Delay
+                delay_key = f"delay_{tid}"
+                if delay_key in request.form:
+                    try:
+                        val = int(request.form.get(delay_key))
+                        t['delay_min'] = val
+                    except: pass
+                    
+        with open(FILE_CONFIG_IKLAN, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=4, ensure_ascii=False)
+            
+        flash("Konfigurasi Iklan Otomatis berhasil diupdate! Bot akan auto-reload.", "success")
+        
+    except Exception as e:
+        flash(f"Gagal update config: {e}", "danger")
+        
+    return redirect(url_for('broadcast'))
 
 @app.route('/save_broadcast', methods=['POST'])
 def save_broadcast():
