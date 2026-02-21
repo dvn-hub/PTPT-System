@@ -92,7 +92,7 @@ def load_broadcasts():
                 def normalize(item, idx_or_key):
                     if not isinstance(item, (str, dict)): return None
                     if isinstance(item, (bool, int, float)): return None
-                    if isinstance(item, str) and len(item) < 5: return None
+                    if isinstance(item, str) and len(item) < 1: return None
                     
                     template = {
                         "id": str(idx_or_key),
@@ -163,6 +163,24 @@ def load_broadcasts():
                             norm['title'] = "📢 Iklan Otomatis"
                             add_template(norm)
 
+                    # 2. Targets (Pesan Khusus) -> NEW: Load individual targets as templates
+                    if 'targets' in data and isinstance(data['targets'], list):
+                        for t in data['targets']:
+                            if 'pesan_khusus' in t and isinstance(t['pesan_khusus'], list):
+                                msg = "\n".join(t['pesan_khusus'])
+                                t_name = t.get('nama', str(t.get('id', 'Unknown')))
+                                
+                                template = {
+                                    "id": f"auto_ads_{t.get('id')}",
+                                    "name": f"Auto Ads: {t_name}",
+                                    "title": f"📢 Iklan: {t_name}",
+                                    "description": msg,
+                                    "color": "#3498db",
+                                    "channels": str(t.get('id')),
+                                    "image_url": ""
+                                }
+                                add_template(template)
+
                     # Check specific keys first
                     target_list = None
                     for key in ['messages', 'broadcasts', 'ads', 'promos', 'embeds']:
@@ -177,8 +195,9 @@ def load_broadcasts():
                     else:
                         # Iterate values
                         for k, v in data.items():
-                            norm = normalize(v, k)
-                            add_template(norm)
+                            if k not in ['pesan_default', 'targets']: # Skip already processed
+                                norm = normalize(v, k)
+                                add_template(norm)
                             
         except Exception as e:
             print(f"❌ Error importing from config.json: {e}")
@@ -585,11 +604,13 @@ def broadcast():
                             "delay": t.get('delay_min', 3600),
                             "message": ""
                         }
+                        # Load message if exists, otherwise empty (so user can add it)
                         if 'pesan_khusus' in t and isinstance(t['pesan_khusus'], list):
                             t_obj['message'] = "\n".join(t['pesan_khusus'])
                         ads_data['targets'].append(t_obj)
         except Exception as e:
             print(f"Error loading ads config: {e}")
+            flash(f"Gagal load config iklan: {e}", "danger")
             
     return render_template('broadcast.html', admin=session, templates=templates, ads_data=ads_data)
 
