@@ -356,6 +356,10 @@ class TicketPanelView(ui.View):
         options = []
         seen = set()
         for p in patungans:
+            # Filter produk stock (biasanya slot 9999) agar tidak muncul di menu PTPT
+            if p.total_slots >= 9000:
+                continue
+            
             if p.product_name not in seen:
                 # Calculate current slots dynamically
                 stmt_count = select(func.count(UserSlot.id)).where(
@@ -515,6 +519,9 @@ class RemoveParticipantSelectProductView(ui.View):
         options = []
         seen = set()
         for p in patungans:
+            if p.total_slots >= 9000:
+                continue
+            
             if p.product_name not in seen:
                 options.append(discord.SelectOption(
                     label=p.product_name,
