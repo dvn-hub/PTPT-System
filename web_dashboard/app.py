@@ -166,8 +166,11 @@ def load_broadcasts():
                     # 2. Targets (Pesan Khusus) -> NEW: Load individual targets as templates
                     if 'targets' in data and isinstance(data['targets'], list):
                         for t in data['targets']:
-                            if 'pesan_khusus' in t and isinstance(t['pesan_khusus'], list):
-                                msg = "\n".join(t['pesan_khusus'])
+                            if isinstance(t, dict):
+                                msg = ""
+                                if 'pesan_khusus' in t and isinstance(t['pesan_khusus'], list):
+                                    msg = "\n".join(t['pesan_khusus'])
+                                
                                 t_name = t.get('nama', str(t.get('id', 'Unknown')))
                                 
                                 template = {
@@ -674,8 +677,7 @@ def save_broadcast():
     
     # --- 1. HANDLE AUTO ADS (CONFIG.JSON) ---
     # Jika yang diedit adalah panel Iklan Otomatis
-    if template_id and template_id.startswith('auto_ads_'):
-        real_id = template_id.replace('auto_ads_', '')
+    if template_id and (template_id.startswith('auto_ads_') or template_id == 'pesan_default'):
         description = request.form.get('description')
         
         if not os.path.exists(FILE_CONFIG_IKLAN):
@@ -687,7 +689,15 @@ def save_broadcast():
                 config = json.load(f)
             
             updated = False
-            if 'targets' in config and isinstance(config['targets'], list):
+            
+            if template_id == 'pesan_default':
+                if description:
+                    config['pesan_default'] = [line.rstrip() for line in description.split('\n')]
+                else:
+                    config['pesan_default'] = []
+                updated = True
+            elif 'targets' in config and isinstance(config['targets'], list):
+                real_id = template_id.replace('auto_ads_', '')
                 for t in config['targets']:
                     if str(t.get('id')) == real_id:
                         # Update Pesan Khusus
@@ -756,7 +766,7 @@ def delete_broadcast(id):
     if not session.get('logged_in'): return redirect('/')
     
     # Cegah penghapusan Auto Ads dari tombol delete biasa
-    if id.startswith('auto_ads_'):
+    if id.startswith('auto_ads_') or id == 'pesan_default':
         flash("Iklan Otomatis tidak bisa dihapus dari sini. Edit config.json manual jika ingin menghapus target.", "warning")
         return redirect(url_for('broadcast'))
         
