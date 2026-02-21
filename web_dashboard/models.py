@@ -103,6 +103,10 @@ class PaymentRecord(db.Model):
     notes = db.Column(db.Text)
     detected_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    @property
+    def amount(self):
+        return self.expected_amount
+
 class CustomCommand(db.Model):
     __tablename__ = 'custom_commands'
     id = db.Column(db.Integer, primary_key=True)
