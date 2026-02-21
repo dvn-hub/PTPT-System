@@ -78,7 +78,7 @@ def load_broadcasts():
             with open(FILE_BROADCASTS, 'r', encoding='utf-8-sig') as f:
                 data = json.load(f)
                 if isinstance(data, list):
-                    return data
+                    templates.extend(data)
         except Exception as e:
             print(f"❌ Error loading broadcasts.json: {e}")
 
@@ -140,12 +140,29 @@ def load_broadcasts():
                         return None
                     return template
 
+                # Track existing IDs to prevent duplicates
+                existing_ids = set(t.get('id') for t in templates)
+                
+                def add_template(t):
+                    if t and t['id'] not in existing_ids:
+                        templates.append(t)
+                        existing_ids.add(t['id'])
+
                 # Extraction Logic
                 if isinstance(data, list):
                     for i, item in enumerate(data):
                         norm = normalize(item, i)
-                        if norm: templates.append(norm)
+                        add_template(norm)
                 elif isinstance(data, dict):
+                    # Special handling for 'pesan_default' (Auto Ads)
+                    if 'pesan_default' in data and isinstance(data['pesan_default'], list):
+                        msg = "\n".join(data['pesan_default'])
+                        norm = normalize(msg, "pesan_default")
+                        if norm:
+                            norm['name'] = "Auto Ads (Default)"
+                            norm['title'] = "📢 Iklan Otomatis"
+                            add_template(norm)
+
                     # Check specific keys first
                     target_list = None
                     for key in ['messages', 'broadcasts', 'ads', 'promos', 'embeds']:
@@ -156,12 +173,12 @@ def load_broadcasts():
                     if target_list:
                         for i, item in enumerate(target_list):
                             norm = normalize(item, i)
-                            if norm: templates.append(norm)
+                            add_template(norm)
                     else:
                         # Iterate values
                         for k, v in data.items():
                             norm = normalize(v, k)
-                            if norm: templates.append(norm)
+                            add_template(norm)
                             
         except Exception as e:
             print(f"❌ Error importing from config.json: {e}")
@@ -549,7 +566,7 @@ def broadcast():
     ads_data = None
     if os.path.exists(FILE_CONFIG_IKLAN):
         try:
-            with open(FILE_CONFIG_IKLAN, 'r', encoding='utf-8') as f:
+            with open(FILE_CONFIG_IKLAN, 'r', encoding='utf-8-sig') as f:
                 raw = json.load(f)
                 ads_data = {
                     "default": "",
@@ -585,7 +602,7 @@ def save_ads_config():
         return redirect(url_for('broadcast'))
         
     try:
-        with open(FILE_CONFIG_IKLAN, 'r', encoding='utf-8') as f:
+        with open(FILE_CONFIG_IKLAN, 'r', encoding='utf-8-sig') as f:
             config = json.load(f)
             
         # 1. Save Default Message
