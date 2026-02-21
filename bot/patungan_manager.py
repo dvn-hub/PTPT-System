@@ -238,6 +238,20 @@ class PatunganManager:
             
             # Send each patungan
             for patungan in patungans:
+                # Filter stock items (usually slot 9999) agar tidak masuk list PTPT
+                # Added name check as backup for legacy data
+                if patungan.total_slots >= 9000 or patungan.product_name.startswith(('SC ', 'COIN', 'RUBY', 'STONE')):
+                    # Clean up if it was accidentally posted
+                    if patungan.message_id:
+                        try:
+                            msg = await list_channel.fetch_message(int(patungan.message_id))
+                            await msg.delete()
+                        except:
+                            pass
+                        patungan.message_id = None
+                        await self.bot.session.commit()
+                    continue
+
                 embed = await self.create_patungan_embed(patungan)
                 
                 if patungan.message_id:
@@ -1283,6 +1297,10 @@ class PatunganManager:
             )
             
             for patungan in patungans:
+                # Filter stock items from admin list too
+                if patungan.total_slots >= 9000 or patungan.product_name.startswith(('SC ', 'COIN', 'RUBY', 'STONE')):
+                    continue
+
                 field_value = f"**Nama:** {patungan.product_name}\n"
                 price_display = f"Rp {patungan.price:,}/slot" if patungan.price > 0 else "GRATIS"
                 field_value += f"**{Emojis.CASH_MONEY} Harga:** {price_display}\n"

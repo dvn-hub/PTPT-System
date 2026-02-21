@@ -398,6 +398,10 @@ class DeletePatunganSelectView(ui.View):
         options = []
         seen = set()
         for p in patungans:
+            # Filter stock items
+            if p.total_slots >= 9000 or p.product_name.startswith(('SC ', 'COIN', 'RUBY', 'STONE')):
+                continue
+                
             if p.product_name not in seen:
                 options.append(discord.SelectOption(
                     label=f"{p.product_name}",
