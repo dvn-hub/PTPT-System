@@ -77,49 +77,65 @@ class OCRProcessor:
     def _extract_amount_from_text(self, text: str) -> int:
         """Extract amount from OCR text"""
         # Patterns to find amounts
+        # Updated regex to allow spaces within numbers (common OCR issue)
         patterns = [
-            r'Rp[\s\.]*([\d\.,]+)',  # Rp 100.000 (lebih fleksibel)
-            r'IDR[\s\.]*([\d\.,]+)',
-            r'Total[\s\W]*([\d\.,]+)',
-            r'Jumlah[\s\W]*([\d\.,]+)',
-            r'Nominal[\s\W]*([\d\.,]+)',
-            r'Transfer[\s\W]*([\d\.,]+)',
+            r'Rp[\s\.:]*([\d\., ]+)', 
+            r'IDR[\s\.:]*([\d\., ]+)',
+            r'Total[\s\W]*([\d\., ]+)',
+            r'Jumlah[\s\W]*([\d\., ]+)',
+            r'Nominal[\s\W]*([\d\., ]+)',
+            r'Transfer[\s\W]*([\d\., ]+)',
         ]
         
+        candidates = []
+
         for pattern in patterns:
             matches = re.findall(pattern, text, re.IGNORECASE)
-            if matches:
-                # Take the first match (usually the largest amount)
-                amount_str = matches[0]
-                
-                # Fix Parsing Angka (CRITICAL - BCA/E-Wallet)
-                # Logic: Split at the last dot (.) if it looks like cents, then regex
-                
-                # Check for decimal part (e.g., .00)
-                if '.' in amount_str:
-                    parts = amount_str.rsplit('.', 1)
-                    # If the last part is exactly 2 digits, assume it's cents and discard it
-                    if len(parts) > 1 and len(parts[1]) == 2 and parts[1].isdigit():
-                        amount_str = parts[0]
-                
-                # Aggressive sanitization: Remove everything except digits
-                amount_clean = re.sub(r'[^0-9]', '', amount_str)
-                
-                try:
-                    if amount_clean:
-                        return int(amount_clean)
-                except ValueError:
-                    continue
+            for match in matches:
+                candidates.append(match)
         
-        # If no pattern matches, try to find any number that looks like an amount
-        numbers = re.findall(r'\b\d{4,}\b', text)  # Find numbers with 4+ digits
-        if numbers:
+        # Fallback: Find standalone numbers with separators
+        fallback_matches = re.findall(r'\b\d{1,3}(?:[\., ]\d{3})+(?:[\.,]\d{1,2})?\b', text)
+        candidates.extend(fallback_matches)
+
+        best_amount = 0
+
+        for amount_str in candidates:
+            # Cleanup
+            clean_str = amount_str.strip()
+            if '\n' in clean_str: clean_str = clean_str.split('\n')[0]
+            clean_str = clean_str.replace(' ', '')
+
+            # Logic: Split at the last separator to check for cents
+            # Priority: Comma (IDR) -> Dot (US/Error)
+            
+            # 1. Check for Comma Cents (e.g. 10.000,00)
+            if ',' in clean_str:
+                parts = clean_str.rsplit(',', 1)
+                # If suffix is 1 or 2 digits, assume cents and discard
+                if len(parts) > 1 and len(parts[1]) <= 2 and parts[1].isdigit():
+                    clean_str = parts[0]
+            
+            # 2. Check for Dot Cents (e.g. 10.000.00 - OCR Error or US)
+            # Only discard if exactly 2 digits. 3 digits = thousands.
+            if '.' in clean_str:
+                parts = clean_str.rsplit('.', 1)
+                if len(parts) > 1 and len(parts[1]) == 2 and parts[1].isdigit():
+                    clean_str = parts[0]
+
+            # Sanitize to digits only
+            final_digits = re.sub(r'[^0-9]', '', clean_str)
+            
             try:
-                # Filter angka yang terlalu panjang (ID Transaksi biasanya > 12 digit)
-                valid_numbers = [int(n) for n in numbers if len(n) < 12]
-                if valid_numbers:
-                    return max(valid_numbers)
+                if final_digits:
+                    val = int(final_digits)
+                    # Filter unrealistic amounts (e.g. 1, 6, 13)
+                    # Assuming transactions are usually > 1000, but keeping > 100 to be safe
+                    if val > 100:
+                        # Heuristic: Prefer larger amounts but filter out dates/IDs (usually very large)
+                        if val > best_amount and val < 100000000000:
+                            best_amount = val
             except ValueError:
-                pass
+                continue
         
-        return 0
+        return best_amount

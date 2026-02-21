@@ -250,6 +250,18 @@ class PaymentVerificationView(ui.View):
                 await interaction.followup.send("❌ Data slot tidak ditemukan (Mungkin sudah dihapus).", ephemeral=True)
                 return
             
+            # PRE-FETCH DATA BEFORE COMMIT (Avoid Detached Instance Error)
+            # Ensure ticket is loaded
+            if not slot.ticket:
+                from database.models import UserTicket
+                ticket = await self.bot.session.get(UserTicket, slot.ticket_id)
+                slot.ticket = ticket
+            
+            buyer_id = slot.ticket.discord_user_id if slot.ticket else "Unknown"
+            item_name = slot.patungan_version
+            ticket_id = slot.ticket_id
+            game_username = slot.game_username
+
             # Fix: Update ALL unpaid slots in this ticket (Looping Update)
             await self._update_all_slots_in_ticket(self.bot.session, slot.ticket_id, interaction.user.name)
             await self.bot.session.commit()
@@ -258,7 +270,7 @@ class PaymentVerificationView(ui.View):
             from database.models import UserSlot
             from sqlalchemy import select
             stmt_slots = select(UserSlot).where(
-                UserSlot.ticket_id == slot.ticket_id,
+                UserSlot.ticket_id == ticket_id,
                 UserSlot.slot_status == 'paid'
             )
             result_slots = await self.bot.session.execute(stmt_slots)
@@ -268,13 +280,9 @@ class PaymentVerificationView(ui.View):
             from bot.patungan_manager import PatunganManager
             manager = PatunganManager(self.bot)
             
-            if not slot.ticket:
-                await interaction.followup.send("❌ Data ticket tidak ditemukan.", ephemeral=True)
-                return
-
             await manager.grant_patungan_access(
-                user_id=slot.ticket.discord_user_id,
-                product_name=slot.patungan_version
+                user_id=buyer_id,
+                product_name=item_name
             )
             
             # Update list channel
@@ -288,8 +296,8 @@ class PaymentVerificationView(ui.View):
             )
             
             embed.add_field(name="━━━━━━━━━━━━━━", value="**DETAIL TRANSAKSI**", inline=False)
-            embed.add_field(name='User', value=f'<@{slot.ticket.discord_user_id}>', inline=True)
-            embed.add_field(name='Slot', value=slot.game_username, inline=True)
+            embed.add_field(name='User', value=f'<@{buyer_id}>', inline=True)
+            embed.add_field(name='Slot', value=game_username, inline=True)
             embed.add_field(name='Verified by', value=interaction.user.name, inline=True)
             
             await interaction.edit_original_response(embed=embed, view=None)
@@ -300,8 +308,8 @@ class PaymentVerificationView(ui.View):
                 total_price = sum(s.locked_price for s in paid_slots)
                 
                 hist_embed = discord.Embed(title=f"{Emojis.VERIFIED} **SUCCESSFUL TRANSACTION**", color=self.config.COLOR_GOLD)
-                hist_embed.add_field(name=f"{Emojis.TICKET} **Item:**", value=slot.patungan_version, inline=True)
-                hist_embed.add_field(name=f"{Emojis.DISCORD_CROWN} **Buyer:**", value=f"<@{slot.ticket.discord_user_id}>", inline=True)
+                hist_embed.add_field(name=f"{Emojis.TICKET} **Item:**", value=item_name, inline=True)
+                hist_embed.add_field(name=f"{Emojis.DISCORD_CROWN} **Buyer:**", value=f"<@{buyer_id}>", inline=True)
                 hist_embed.add_field(name=f"{Emojis.MONEY_BAG} **Price:**", value=f"Rp {total_price:,}", inline=True)
                 hist_embed.add_field(name=f"{Emojis.NETHERITE_PICKAXE} **Handler:**", value=interaction.user.name, inline=True)
                 if self.payment_record.proof_image_url:
@@ -311,11 +319,11 @@ class PaymentVerificationView(ui.View):
 
             # Send DM to user
             try:
-                user = await interaction.guild.fetch_member(int(slot.ticket.discord_user_id))
+                user = await interaction.guild.fetch_member(int(buyer_id))
                 
                 user_embed = discord.Embed(
                     title=f'{Emojis.ROCKET} **ORDER UPDATE**',
-                    description=f'Halo kak! Pembayaran untuk slot **{slot.patungan_version}** telah kami terima.',
+                    description=f'Halo kak! Pembayaran untuk slot **{item_name}** telah kami terima.',
                     color=self.config.COLOR_SUCCESS
                 )
                 
