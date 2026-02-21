@@ -1,0 +1,132 @@
+{
+
+"pesan_default": [
+        "> <a:05rainbowboost:1455057895191216183> **DVN STORE & COMMUNITY** <a:05rainbowboost:1455057895191216183>",
+        "> <a:00discordcrown:1455058032764391519> *One Stop Solution for Roblox & Fish It Players*",
+        "> ",
+        "> Cari kebutuhan Fish It terlengkap? Atau mau transaksi aman? **DVN SOLUSINYA!**",
+        "> ",
+        "> <a:02bluearrowspin:1455058084643737713> ▬▬▬▬▬▬▬▬▬▬▬▬▬▬ <a:02bluearrowspin:1455058084643737713>",
+        "> ",
+        "> <a:00fishspinning:1455059587328774175> **KEBUTUHAN FISH IT (READY STOCK)**",
+        "> <a:02animatedarrowblue:1455058410994401436> **RUBY GEMSTONE:** Rp 25.000 / Pcs",
+        "> <a:02animatedarrowblue:1455058410994401436> **SC LOW:** Rp 1.000 / 2 Pcs",
+        "> <a:02animatedarrowblue:1455058410994401436> **ENCHANT STONE:** Rp 1.000 / 50 Pcs",
+        "> <a:02animatedarrowblue:1455058410994401436> **EVOLVED STONE:** Rp 1.000 / 4 Pcs",
+        "> <a:02animatedarrowblue:1455058410994401436> **LOCHNESS MONSTER:** Rp 10.000 / Pcs",
+        "> <a:02animatedarrowblue:1455058410994401436> **COINS:** Rate 1K / 2M",
+        "> ",
+        "> <a:06fireblue:1454839205313118289> **LAYANAN SPESIAL DVN**",
+        "> <:000iconlucky:1455059401860976767> **PTPT SERVER LUCK (BOOST x8)**",
+        "> • **12 Jam:** Rp 12.000",
+        "> • **24 Jam:** Rp 20.000",
+        "> ",
+        "> <a:05bluepresent:1455059517929816309>  **PAKET BUNDLING**",
+        "> • **12 Jam (2 Slot):** Rp 22.000 | **(3 Slot):** Rp 30.000",
+        "> • **24 Jam (2 Slot):** Rp 38.000 | **(3 Slot):** Rp 55.000",
+        "> ",
+        "> <a:05moneybag:1455058386097016937> **JASA GIFT IN GAME (GIG):**",
+        "> Rate Miring **Rp 90 / 1 Robux**! Support semua Game Roblox.",
+        "> ",
+        "> <a:04verified:1455059203218477209> **OFFICIAL MIDMAN / REKBER:**",
+        "> Transaksi jual-beli aman, fee bersahabat. Admin on 24 Jam (selama melek).",
+        "> ",
+        "> <a:02bluearrowspin:1455058084643737713> ▬▬▬▬▬▬▬▬▬▬▬▬▬▬ <a:02bluearrowspin:1455058084643737713>",
+        "> ",
+        "> <a:07announcement:1455058499376648242> **JANGAN RAGU, GAS ORDER SEKARANG!**",
+        "> <:000ticket:1455058348012474428> **Link:** https://discord.gg/dvn",
+        "> <a:00rocket:1455057768309461064> *Join the solid community now!*"
+    ],
+
+    "targets": [
+        { "id": 1182974945618313236, "nama": "P4kong", "delay_min": 7200 },
+        { "id": 1438568061249785968, "nama": "Voxteria", "delay_min": 7200 },
+        { "id": 1446482495502815316, "nama": "SAB", "delay_min": 7200 },
+        { "id": 1442462758372114552, "nama": "MOON", "delay_min": 7200 },
+        { "id": 1431283393848541194, "nama": "Market", "delay_min": 7200 },
+        { "id": 1438624090066915581, "nama": "Market Account", "delay_min": 7200 },
+        { "id": 1438624255313969212, "nama": "Market boost", "delay_min": 7200 },
+        
+        { 
+            "id": 1415947856669446224, 
+            "nama": "Channel Manja (Real Polos)",
+            "delay_min": 3600,
+            "pesan_khusus": [
+                "ptpt x8",
+                "12jam = 12.000",
+                "24jam = 20.000",
+                "paket bundling:",
+                "12jam (2 slot) = 22.000 | (3 slot) = 30.000",
+                "24jam (2 slot) = 38.000 | (3 slot) = 55.000"
+            ]
+        },
+
+        { "id": 1415952516918677584, "nama": "Fish It Fast", "delay_min": 600 },
+
+        { 
+            "id": 1415956355767861268, 
+            "nama": "Fish It Slow (No Link)",
+            "delay_min": 600,
+            "pesan_khusus": [
+                "> <a:05rainbowboost:1455057895191216183> **DVN STORE & COMMUNITY** <a:05rainbowboost:1455057895191216183>",
+                "> <a:00discordcrown:1455058032764391519> *One Stop Solution for Roblox & Fish It Players*",
+                "> ",
+                "> Cari kebutuhan Fish It terlengkap? Atau mau transaksi aman? **DVN SOLUSINYA!**",
+                "> ",
+                "> <a:02bluearrowspin:1455058084643737713> ▬▬▬▬▬▬▬▬▬▬▬▬▬▬ <a:02bluearrowspin:1455058084643737713>",
+                "> ",
+                "> <a:00fishspinning:1455059587328774175> **KEBUTUHAN FISH IT (READY STOCK)**",
+                "> <a:02animatedarrowblue:1455058410994401436> **RUBY GEMSTONE:** Rp 25.000 / Pcs",
+                "> <a:02animatedarrowblue:1455058410994401436> **SC LOW:** Rp 1.000 / 2 Pcs",
+                "> <a:02animatedarrowblue:1455058410994401436> **ENCHANT STONE:** Rp 1.000 / 50 Pcs",
+                "> <a:02animatedarrowblue:1455058410994401436> **EVOLVED STONE:** Rp 1.000 / 4 Pcs",
+                "> <a:02animatedarrowblue:1455058410994401436> **LOCHNESS MONSTER:** Rp 10.000 / Pcs",
+                "> <a:02animatedarrowblue:1455058410994401436> **COINS:** Rate 1K / 2M",
+                "> ",
+                "> <a:06fireblue:1454839205313118289> **LAYANAN SPESIAL DVN**",
+                "> <:000iconlucky:1455059401860976767> **PTPT SERVER LUCK (BOOST x8)**",
+                "> • **12 Jam:** Rp 12.000",
+                "> • **24 Jam:** Rp 20.000",
+                "> ",
+                "> <a:05bluepresent:1455059517929816309>  **PAKET BUNDLING**",
+                "> • **12 Jam (2 Slot):** Rp 22.000 | **(3 Slot):** Rp 30.000",
+                "> • **24 Jam (2 Slot):** Rp 38.000 | **(3 Slot):** Rp 55.000",
+                "> ",
+                "> <a:05moneybag:1455058386097016937> **JASA GIFT IN GAME (GIG):**",
+                "> Rate Miring **Rp 90 / 1 Robux**! Support semua Game Roblox.",
+                "> ",
+                "> <a:04verified:1455059203218477209> **OFFICIAL MIDMAN / REKBER:**",
+                "> Transaksi jual-beli aman, fee bersahabat. Admin on 24 Jam (selama melek).",
+                "> ",
+                "> <a:02bluearrowspin:1455058084643737713> ▬▬▬▬▬▬▬▬▬▬▬▬▬▬ <a:02bluearrowspin:1455058084643737713>",
+                "> ",
+                "> <a:07announcement:1455058499376648242> **JANGAN RAGU, GAS ORDER SEKARANG!**",
+                "> <:000ticket:1455058348012474428> **Link:** DM ADMIN FOR INVITE",
+                "> <a:00rocket:1455057768309461064> *Join the solid community now!*"
+            ]
+        },
+
+        { 
+            "id": 1400291625590063217, 
+            "nama": "Chloe Market",
+            "delay_min": 7200,
+            "pesan_khusus": [
+                "> <a:05rainbowboost:1455057895191216183> <:000opensign:1454851061310558268> **OPEN LIST PENJUALAN** <:000opensign:1454851061310558268> <a:05rainbowboost:1455057895191216183>",
+                "> <a:06fireblue:1454839205313118289> **STOK TERBATAS • HARGA MERAKYAT** <a:06fireblue:1454839205313118289>",
+                "> <a:02bluearrowspin:1455058084643737713> ▬▬▬▬▬▬▬▬▬▬▬▬▬▬ <a:02bluearrowspin:1455058084643737713>",
+                "> <a:05gdgoldencoinspin:1454839174200033392> **COIN MYTHIC:** 1K/2M",
+                "> <a:00fishspinning:1455059587328774175> **SC LOW:** 1K/2 Pcs",
+                "> <a:05impulso:1455057796415361163> **RUBY GEMSTONE:** 25K/Pcs",
+                "> <:000design1:1456187984511766608> **ENCHANT:** 1K/50 Pcs",
+                "> <:000design:1456187932489814168> **EVOLVED:** 1K/4 Pcs",
+                "> <:000bestbuy:1455059284764266681> **LOCHNESS:** 10K/Pcs",
+                "> ",
+                "> <a:05moneybag:1455058386097016937> **JASA GIFT IN GAME (GIG):**",
+                "> Rate Miring **Rp 90 / 1 Robux**! Support semua Game Roblox.",
+                "> <a:02bluearrowspin:1455058084643737713> ▬▬▬▬▬▬▬▬▬▬▬▬▬▬ <a:02bluearrowspin:1455058084643737713>",
+                "> <a:07announcement:1455058499376648242> **ORDER SEKARANG:** Cek Link di Bio Server!",
+                "> <a:00discordcrown:1455058032764391519> **FAST RESPON | TRUSTED SELLER** <a:00rocket:1455057768309461064>"
+            ]
+        }
+    ]
+}
