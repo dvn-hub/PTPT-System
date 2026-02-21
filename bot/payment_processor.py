@@ -277,13 +277,19 @@ class PaymentVerificationView(ui.View):
             paid_slots = result_slots.scalars().all()
             
             # Grant role and channel access
-            from bot.patungan_manager import PatunganManager
-            manager = PatunganManager(self.bot)
+            # Use existing manager if available to share state/config
+            manager = getattr(self.bot, 'patungan_manager', None)
+            if not manager:
+                from bot.patungan_manager import PatunganManager
+                manager = PatunganManager(self.bot)
             
-            await manager.grant_patungan_access(
+            access_result = await manager.grant_patungan_access(
                 user_id=buyer_id,
                 product_name=item_name
             )
+            
+            if not access_result:
+                await interaction.followup.send(f"⚠️ **WARNING:** Pembayaran verified, tapi GAGAL memberikan Role/Channel ke <@{buyer_id}>. Mohon cek manual (Role/Channel mungkin hilang).", ephemeral=True)
             
             # Update list channel
             await manager.update_list_channel()

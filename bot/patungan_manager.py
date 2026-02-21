@@ -886,6 +886,10 @@ class PatunganManager:
     async def grant_patungan_access(self, user_id: str, product_name: str, slots_count: int = 1):
         """Grant role and channel access to user"""
         try:
+            if not user_id or user_id == "Unknown" or not str(user_id).isdigit():
+                logger.error(f"Invalid user_id for grant_access: {user_id}")
+                return None
+
             guild = self.bot.get_guild(self.config.SERVER_ID)
             if not guild:
                 return None
@@ -945,7 +949,7 @@ class PatunganManager:
                     return channel
             
             logger.info(f"Granted access to {user_id} for {product_name}")
-            return None
+            return True # Return True if successful (Role added) even if channel return is optional
             
         except Exception as e:
             logger.error(f"Error granting access: {e}")
