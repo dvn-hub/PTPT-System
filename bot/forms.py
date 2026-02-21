@@ -33,6 +33,7 @@ class CreatePatunganForm(ui.Modal, title='➕ Buat Patungan Baru'):
         self.price = ui.TextInput(
             label='Harga per Slot (Rp)',
             placeholder='500000',
+            placeholder='14000 (24h) / 10000 (12h)',
             style=discord.TextStyle.short,
             required=True,
             max_length=10
