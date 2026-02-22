@@ -575,7 +575,7 @@ class RemoveParticipantSelectSlotView(ui.View):
             
             options.append(discord.SelectOption(
                 label=label,
-                value=slot.game_username,
+                value=str(slot.slot_number),
                 description=f"Status: {slot.slot_status.upper()}"
             ))
             if len(options) >= 25: break
@@ -585,12 +585,16 @@ class RemoveParticipantSelectSlotView(ui.View):
         self.add_item(select)
 
     async def callback(self, interaction: discord.Interaction):
-        username = interaction.data['values'][0]
-        await self.bot.admin_handler.remove_participant_slot(
-            interaction, 
+        await interaction.response.defer(ephemeral=True)
+        slot_number = int(interaction.data['values'][0])
+        
+        success, msg = await self.bot.admin_handler.cancel_slot_by_number(
             self.product_name, 
-            username
+            slot_number, 
+            interaction.user
         )
+        
+        await interaction.followup.send(msg, ephemeral=True)
 
 class RemoveParticipantModal(ui.Modal, title="🗑️ Hapus Member (Cancel Slot)"):
     """Modal untuk menghapus member dari slot"""

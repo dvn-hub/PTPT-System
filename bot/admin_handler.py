@@ -197,7 +197,7 @@ class AdminHandler:
                 UserSlot.slot_status.in_(['booked', 'waiting_payment', 'paid'])
             )
             result = await self.bot.session.execute(stmt)
-            slot = result.scalar_one_or_none()
+            slot = result.scalars().first()
 
             if not slot:
                 await interaction.followup.send(f"❌ Member **{username}** tidak ditemukan di patungan **{product_name}**.", ephemeral=True)
