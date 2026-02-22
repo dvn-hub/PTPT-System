@@ -93,7 +93,7 @@ class MainTicketView(ui.View):
         if ticket:
              stmt = select(UserSlot).where(
                 UserSlot.ticket_id == ticket.id,
-                UserSlot.slot_status == 'booked'
+                UserSlot.slot_status.in_(['booked', 'waiting_payment'])
             )
              result = await self.bot.session.execute(stmt)
              slots = result.scalars().all()
@@ -103,7 +103,7 @@ class MainTicketView(ui.View):
 
         if not slots:
             await interaction.response.send_message(
-                f"{Emojis.WARNING} **Anda belum terdaftar di slot manapun atau tagihan sudah lunas.**\nSilakan klik tombol **📝 Daftar Slot** terlebih dahulu jika belum mendaftar.",
+                f"❌ **ANDA BELUM MENDAFTAR SLOT!**\n\nSilakan klik tombol **📝 Daftar Slot** terlebih dahulu sebelum melakukan pembayaran.",
                 ephemeral=True
             )
             return
@@ -539,6 +539,7 @@ class RemoveParticipantSelectProductView(ui.View):
         self.add_item(select)
 
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         product_name = interaction.data['values'][0]
         
         # Fetch slots
@@ -554,11 +555,11 @@ class RemoveParticipantSelectProductView(ui.View):
         slots = result.scalars().all()
         
         if not slots:
-            await interaction.response.send_message(f"❌ Tidak ada member aktif di {product_name}.", ephemeral=True)
+            await interaction.followup.send(f"❌ Tidak ada member aktif di {product_name}.", ephemeral=True)
             return
             
         view = RemoveParticipantSelectSlotView(self.bot, product_name, slots)
-        await interaction.response.send_message(f"Pilih member yang akan dihapus dari **{product_name}**:", view=view, ephemeral=True)
+        await interaction.followup.send(f"Pilih member yang akan dihapus dari **{product_name}**:", view=view, ephemeral=True)
 
 class RemoveParticipantSelectSlotView(ui.View):
     """View untuk memilih slot user yang akan dihapus"""
